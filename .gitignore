@@ -1,0 +1,17 @@
+# Secrets
+.env
+.env.*
+
+# Generated output / run artifacts
+runs/
+media/
+generated/
+_render_temp.py
+*.mp4
+
+# Vector store and caches
+.chroma_db/
+.llm_cache/
+__pycache__/
+*.pyc
+.pytest_cache/

@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "deny": [
+      "Read(./media/**)",
+      "Read(./generated/**)",
+      "Read(./runs/**)",
+      "Read(./.chroma_db/**)",
+      "Read(./.env)",
+      "Read(./**/*.mp4)"
+    ]
+  }
+}
