@@ -54,7 +54,7 @@ def format_lint_errors(issues, limit=15) -> str:
     return "\n".join(lines)
 
 
-def run(spec_path: str) -> dict:
+def run(spec_path: str, rep_no: int = 1) -> dict:
     name = os.path.splitext(os.path.basename(spec_path))[0]
     with open(spec_path, encoding="utf-8") as fh:
         errs = validate(yaml.safe_load(fh))
@@ -113,7 +113,7 @@ def run(spec_path: str) -> dict:
     if not frames and not crashed:      # failed on lint only: still render the last attempt for the report
         ok, _, frames = C.render_and_frames(spath, rep["scene"] or "Scene", adir)
         attempts[-1]["frames"] = {k: f"attempt_{n}/{v}" for k, v in frames.items()}
-    result = {"spec": name, "pipeline": "v3", "model": C.MODEL, "status": status, "attempts_used": len(attempts),
+    result = {"spec": name, "pipeline": "v3", "rep": rep_no, "model": C.MODEL, "status": status, "attempts_used": len(attempts),
               "attempts": attempts, "crashed": crashed, "final_errors": final_errors,
               "final_lint_errors": len(final_errors) if not crashed else None, "seconds": round(time.time() - t0),
               "contexts": rec.contexts, "leak_check": "passed (assert on every retrieved context)",
@@ -124,4 +124,4 @@ def run(spec_path: str) -> dict:
 
 
 if __name__ == "__main__":
-    run(sys.argv[1])
+    run(sys.argv[1], int(sys.argv[2]) if len(sys.argv) > 2 else 1)

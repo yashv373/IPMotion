@@ -24,7 +24,7 @@ sys.path.insert(0, os.path.join(C.ROOT, "bench"))
 from spec_validator import validate  # noqa: E402
 
 
-def run(spec_path: str) -> dict:
+def run(spec_path: str, rep_no: int = 1) -> dict:
     name = os.path.splitext(os.path.basename(spec_path))[0]
     with open(spec_path, encoding="utf-8") as fh:
         errs = validate(yaml.safe_load(fh))
@@ -72,7 +72,7 @@ def run(spec_path: str) -> dict:
             crashed = not ok
         elif rt:
             pass
-    result = {"spec": name, "pipeline": "v2", "model": C.MODEL, "status": status, "attempts_used": len(attempts),
+    result = {"spec": name, "pipeline": "v2", "rep": rep_no, "model": C.MODEL, "status": status, "attempts_used": len(attempts),
               "attempts": attempts, "crashed": crashed, "final_errors": final_errors,
               "final_lint_errors": None if (crashed and not frames) else len(final_errors),
               "final_lint_summary": lint_summary, "seconds": seconds, "contexts": rec.contexts,
@@ -84,4 +84,4 @@ def run(spec_path: str) -> dict:
 
 
 if __name__ == "__main__":
-    run(sys.argv[1])
+    run(sys.argv[1], int(sys.argv[2]) if len(sys.argv) > 2 else 1)

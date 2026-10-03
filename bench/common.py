@@ -16,10 +16,11 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, ROOT)
 CLEAN_INDEX = os.path.join(ROOT, ".chroma_db_clean")
 os.environ["IPMOTION_CHROMA_DIR"] = CLEAN_INDEX          # BOTH pipelines use the clean manifest-only index
-MODEL = "gemini-3.8-flash"                               # the v2 default; same model for both pipelines
+MODEL = "gemini-3.5-flash"                               # ONE model for every run in the comparison
 MAX_ATTEMPTS = 8
 
 import rag_pipeline  # noqa: E402  (reads IPMOTION_CHROMA_DIR at import)
+import runner  # noqa: E402
 from ipmotion.leakguard import LeakError, assert_no_truth_leak  # noqa: E402
 
 SPEC_INSTRUCTIONS = """## SPEC FORMAT (how to read the spec below)
@@ -60,24 +61,56 @@ class Recorder:
         self.contexts: list[dict] = []
 
     def guarded_retrieve(self, original):
+        original = getattr(original, "__wrapped__", original)      # never stack guards from earlier runs
         def wrapped(query, top_k=rag_pipeline.TOP_K):
             ctx = original(query, top_k=top_k)
             assert_no_truth_leak([ctx], where="retrieved context")      # raises LeakError -> run aborts
             sources = re.findall(r"^# --- \[(\w+)\] ([^\s:]+)(?: :: (\w+))? ---", ctx, flags=re.M)
             self.contexts.append({"query_chars": len(query), "chars": len(ctx), "chunks": [list(s) for s in sources]})
             return ctx
+        wrapped.__wrapped__ = original
         return wrapped
 
 
-def call_llm(prompt: str, tries: int = 4) -> str:
-    last = None
-    for i in range(tries):
-        try:
-            return rag_pipeline.call_llm(prompt, model=MODEL)
-        except Exception as e:                                          # rate limits etc.
-            last = e
-            time.sleep(15 * (i + 1))
-    raise RuntimeError(f"LLM call failed after {tries} tries: {last}")
+class DailyQuotaError(BaseException):
+    """Daily API quota exhausted. BaseException so v2's `except Exception` around its fix call cannot swallow it."""
+
+
+_DAILY = re.compile(r"PerDay|per.?day|GenerateRequestsPerDay", re.I)
+_TRANSIENT = re.compile(r"429|ResourceExhausted|503|504|500|unavailable|timed? ?out|deadline|overloaded", re.I)
+
+
+def wrap_llm(original, sleep=time.sleep, tries: int = 4):
+    """Identical error policy for v2 and v3: daily quota -> stop at once; transient errors -> backoff retries."""
+    def wrapped(prompt, api_key=None, model=None):
+        last = None
+        for i in range(tries):
+            try:
+                return original(prompt, api_key=api_key, model=model or MODEL)
+            except Exception as e:
+                msg = str(e)
+                if _DAILY.search(msg):
+                    raise DailyQuotaError(msg[:400])
+                if not _TRANSIENT.search(msg):
+                    raise
+                last = e
+                sleep(20 * (i + 1))
+        raise RuntimeError(f"LLM call still failing after {tries} tries: {str(last)[:300]}")
+    wrapped.__wrapped__ = original
+    return wrapped
+
+
+def install_llm_wrapper():
+    if not hasattr(rag_pipeline.call_llm, "__wrapped__"):
+        rag_pipeline.call_llm = wrap_llm(rag_pipeline.call_llm)
+    runner.call_llm = rag_pipeline.call_llm
+
+
+install_llm_wrapper()
+
+
+def call_llm(prompt: str) -> str:
+    return rag_pipeline.call_llm(prompt, model=MODEL)
 
 
 def scene_name(script: str) -> str | None:
