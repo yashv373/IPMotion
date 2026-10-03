@@ -19,6 +19,8 @@ import runner  # noqa: E402   (only for extract_error / the fix-prompt wording, 
 sys.path.insert(0, os.path.join(C.ROOT, "bench"))
 from spec_validator import validate  # noqa: E402
 
+TOP_N = 5
+
 FIX_PROMPT = """The following Manim script was checked and has problems of ONE kind. Fix them.
 
 ## PROBLEMS ({kind})
@@ -38,20 +40,43 @@ FIX_PROMPT = """The following Manim script was checked and has problems of ONE k
 
 ## RULES
 1. Return ONLY the complete fixed Python script. No explanations.
-2. Fix only the listed problems; keep everything else.
+2. Fix only the listed problems; keep everything else. Keep the LABELS and BANNERS block at the top exactly as it is,
+   read every text from it, never type a label/banner yourself, and never use lint_ignore.
 3. Do NOT use any Manim API that is not shown in the context above.
 4. NEVER set config.pixel_width, config.pixel_height, or config.frame_width.
 """
 
 
-def format_lint_errors(issues, limit=15) -> str:
-    lines = []
-    for i in issues[:limit]:
-        objs = "; ".join(f"{o['name']} bbox={o['bbox']}" for o in i["objects"][:3])
-        lines.append(f"- [{i['check']}] line {i['source_line']}, t={i['first_t']}s: {i['detail']}  ({objs})")
-    if len(issues) > limit:
-        lines.append(f"- ... and {len(issues) - limit} more errors of the same kinds")
-    return "\n".join(lines)
+def group_lint(issues):
+    """Group lint errors of the same kind on the same object; biggest groups first."""
+    groups: dict[tuple, list] = {}
+    for i in issues:
+        groups.setdefault((i["check"], i["objects"][0]["name"] if i["objects"] else ""), []).append(i)
+    return sorted(groups.values(), key=lambda g: -len(g))
+
+
+def format_lint_group(g) -> str:
+    i = g[0]
+    objs = "; ".join(f"{o['name']} bbox={o['bbox']}" for o in i["objects"][:3])
+    more = f" (+{len(g) - 1} similar on {i['objects'][0]['name']})" if len(g) > 1 and i["objects"] else ""
+    return f"- [{i['check']}] line {i['source_line']}, t={i['first_t']}s: {i['detail']}  ({objs}){more}"
+
+
+def build_feedback(rep: dict):
+    """-> (kind, text, counts). Order: runtime error alone; else conformance, then lint; at most TOP_N items."""
+    runtime = [i for i in rep["issues"] if i["check"] == "runtime_error"]
+    conf = rep.get("conformance", [])
+    lint_errs = [i for i in rep["issues"] if i["severity"] == "error" and i["check"] != "runtime_error"]
+    counts = {"runtime": len(runtime), "conformance": len(conf), "lint": len(lint_errs)}
+    if runtime:
+        return "runtime error", runtime[0]["traceback"][-2500:], counts
+    items = [f"- [{c['check']}] {c['detail']}" for c in conf] + [format_lint_group(g) for g in group_lint(lint_errs)]
+    if not items:
+        return "pass", "", counts
+    kind = "spec conformance errors" if conf else "lint errors"
+    head = f"{len(conf)} conformance error(s) and {len(lint_errs)} lint error(s) in total; showing the first {min(TOP_N, len(items))}" \
+           f" (conformance first, then lint grouped by kind).\n"
+    return kind, head + "\n".join(items[:TOP_N]), counts
 
 
 def run(spec_path: str, rep_no: int = 1) -> dict:
@@ -60,6 +85,7 @@ def run(spec_path: str, rep_no: int = 1) -> dict:
         errs = validate(yaml.safe_load(fh))
     if errs:
         raise SystemExit("spec invalid:\n" + "\n".join(errs))
+    spec = yaml.safe_load(open(spec_path, encoding="utf-8"))
     run_dir = C.make_run_dir(name, "v3")
     rec = C.Recorder()
     rag_pipeline.retrieve_context = rec.guarded_retrieve(rag_pipeline.retrieve_context)
@@ -68,7 +94,7 @@ def run(spec_path: str, rep_no: int = 1) -> dict:
     print(f"[v3] {name}: run dir {run_dir}")
 
     context = rag_pipeline.retrieve_context(request)
-    script = C.call_llm(rag_pipeline.build_prompt(request, context))
+    script = C.call_llm(C.labels_block(spec_path) + "\n" + rag_pipeline.build_prompt(request, context))
     attempts, last_sig, same, frames, status, final_errors, crashed = [], None, 0, {}, "fail", [], True
 
     for n in range(1, C.MAX_ATTEMPTS + 1):
@@ -77,16 +103,12 @@ def run(spec_path: str, rep_no: int = 1) -> dict:
         spath = os.path.join(adir, "script.py")
         open(spath, "w", encoding="utf-8").write(script)
         scene = C.scene_name(script)
-        rep = lint_script(spath, scene)
+        rep = lint_script(spath, scene, spec=spec)
         C.write_json(os.path.join(adir, "lint.json"), rep)
+        kind, text, counts = build_feedback(rep)
         runtime = [i for i in rep["issues"] if i["check"] == "runtime_error"]
         lint_errs = [i for i in rep["issues"] if i["severity"] == "error" and i["check"] != "runtime_error"]
-        kind, text = "pass", ""
-        if runtime:
-            kind, text = "runtime error", runtime[0]["traceback"][-2500:]
-        elif lint_errs:
-            kind, text = "lint errors", format_lint_errors(lint_errs)
-        else:
+        if kind == "pass":
             ok, log, frames = C.render_and_frames(spath, rep["scene"] or "Scene", adir)
             if not ok:
                 kind, text = "runtime error", runner.extract_error(log)
@@ -94,13 +116,16 @@ def run(spec_path: str, rep_no: int = 1) -> dict:
         sig = (kind, text[:300])
         same = same + 1 if sig == last_sig else 0
         last_sig = sig
-        attempts.append({"n": n, "kind": kind, "lint_errors": len(lint_errs), "runtime": bool(runtime or kind == "runtime error"),
+        attempts.append({"n": n, "kind": kind, "lint_errors": len(lint_errs), "conformance_errors": counts["conformance"],
+                         "runtime": bool(runtime or kind == "runtime error"),
                          "lint_warnings": rep["summary"]["warning"], "frames": {k: f"attempt_{n}/{v}" for k, v in frames.items()}})
-        print(f"[v3] attempt {n}: {kind}" + (f" ({len(lint_errs)} lint errors)" if lint_errs else ""))
+        print(f"[v3] attempt {n}: {kind} (conformance {counts['conformance']}, lint {len(lint_errs)})")
         if kind == "pass":
             status, final_errors, crashed = "pass", [], False
             break
-        final_errors = [{"check": i["check"], "detail": i["detail"]} for i in (runtime or lint_errs)]
+        final_errors = ([{"check": i["check"], "detail": i["detail"]} for i in runtime] or
+                        [{"check": c["check"], "detail": c["detail"]} for c in rep.get("conformance", [])] +
+                        [{"check": i["check"], "detail": i["detail"]} for i in lint_errs])
         crashed = kind == "runtime error"
         if n == C.MAX_ATTEMPTS or same >= 2:
             if same >= 2:
@@ -115,7 +140,9 @@ def run(spec_path: str, rep_no: int = 1) -> dict:
         attempts[-1]["frames"] = {k: f"attempt_{n}/{v}" for k, v in frames.items()}
     result = {"spec": name, "pipeline": "v3", "rep": rep_no, "model": C.MODEL, "status": status, "attempts_used": len(attempts),
               "attempts": attempts, "crashed": crashed, "final_errors": final_errors,
-              "final_lint_errors": len(final_errors) if not crashed else None, "seconds": round(time.time() - t0),
+              "final_lint_errors": len(lint_errs) if not crashed else None,
+              "final_conformance_errors": len(rep.get("conformance", [])) if not crashed else None,
+              "prompt_version": C.PROMPT_VERSION, "seconds": round(time.time() - t0),
               "contexts": rec.contexts, "leak_check": "passed (assert on every retrieved context)",
               "final_frames": attempts[-1]["frames"]}
     C.write_json(os.path.join(run_dir, "final.json"), result)

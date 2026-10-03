@@ -325,3 +325,74 @@ def test_snapshots_follow_play_and_wait_with_times_and_lines():
     rep = build_report(res, "<test>")
     oof = hits(rep, "out_of_frame")
     assert oof and oof[0]["first_t"] == 4.5 and oof[0]["count"] == 2   # only after the last play(); seen by 2 snapshots
+
+
+# ----------------------------------------------------- transient packets
+from manim import DashedVMobject, RoundedRectangle, Transform  # noqa: E402
+from ipmotion_lib import GlowBox, Packet  # noqa: E402
+
+
+class PacketOverBlocksAndWire(Scene):          # library Packet sits on a block edge and on a wire label
+    def construct(self):
+        a = IPBlock("A", TH, width=2, height=1).shift(LEFT * 3)
+        b = IPBlock("B", TH, width=2, height=1).shift(RIGHT * 3)
+        wire = Arrow(a.get_right(), b.get_left(), buff=0.1)
+        pkt = Packet("response", BLUE, TH).move_to(a.get_right())
+        self.add(a, b, wire, pkt)
+
+
+class HandRolledPacket(Scene):                 # GlowBox + Text built by hand, as generated scripts do
+    def construct(self):
+        a = IPBlock("A", TH, width=2, height=1).shift(LEFT * 3)
+        bg = GlowBox(0.8, 0.4, BLUE, BLUE)
+        pkt = VGroup(bg, txt("Read req", 14).move_to(bg)).move_to(a.get_right())
+        self.add(a, pkt)
+
+
+class PacketOffFrame(Scene):
+    def construct(self):
+        self.add(Packet("lost", BLUE, TH).shift(RIGHT * 8))
+
+
+class BannerSizedGlowIsNotAPacket(Scene):      # the old banner bug: a wide GlowBox drawn over text must still be caught
+    def construct(self):
+        t = txt("HEADLINE")
+        self.add(t, GlowBox(10, 0.8, BLUE, BLUE).move_to(t))
+
+
+class DashedRegion(Scene):
+    def construct(self):
+        region = DashedVMobject(RoundedRectangle(width=6, height=3, corner_radius=0.1), num_dashes=40)
+        self.add(region, IPBlock("IN", TH, width=1.5, height=0.8))
+
+
+class TextChangesViaTransform(Scene):
+    def construct(self):
+        t = txt("before")
+        self.add(t)
+        self.play(Transform(t, txt("after")))
+
+
+def test_packets_are_exempt_from_overlap_and_spacing_but_not_from_frame_checks():
+    for sc in (PacketOverBlocksAndWire, HandRolledPacket):
+        rep = lint(sc)
+        assert not [i for i in rep["issues"] if i["check"] in ("min_spacing", "text_overlap", "text_occluded", "dangling_endpoint")
+                    and i["severity"] == "error"], sc.__name__
+    assert hits(lint(PacketOffFrame), "out_of_frame")
+
+
+def test_wide_glowbox_over_text_is_still_a_block_and_still_occludes():
+    assert hits(lint(BannerSizedGlowIsNotAPacket), "text_occluded")
+
+
+def test_dashed_outline_is_one_unit_not_dozens():
+    res = run_scene(DashedRegion)
+    units = res["snapshots"][-1]["units"]
+    dashed = [u for u in units if u["cls"] == "DashedVMobject"]
+    assert len(dashed) == 1 and dashed[0]["bbox"][2] - dashed[0]["bbox"][0] > 5
+
+
+def test_text_attribute_follows_a_transform():
+    res = run_scene(TextChangesViaTransform)
+    texts = [u["text"] for u in res["snapshots"][-1]["units"] if u["kind"] == "text"]
+    assert texts == ["after"]

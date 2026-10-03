@@ -13,7 +13,8 @@ PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(_
 
 
 def lint_script(script: str, scene: str | None = None, timeout: int = 90,
-                thresholds: dict | None = None, only: list[str] | None = None) -> dict:
+                thresholds: dict | None = None, only: list[str] | None = None, spec: dict | None = None) -> dict:
+    """With spec=..., the report also carries report['conformance'] (list of error issues) and conformance_ok."""
     script = os.path.abspath(script)
     work = tempfile.mkdtemp(prefix="ipm_lintrun_")
     out = os.path.join(work, "snapshots.json")
@@ -26,7 +27,7 @@ def lint_script(script: str, scene: str | None = None, timeout: int = 90,
         result = {"snapshots": [], "frame": {"width": 14.2222, "height": 8.0}, "scene": scene,
                   "runtime_error": {"traceback": f"TimeoutError: lint exceeded {timeout}s", "line": 0},
                   "seconds": timeout}
-        return build_report(result, script, thresholds, only)
+        return _finish(build_report(result, script, thresholds, only), result, script, spec)
     if not os.path.exists(out):
         result = {"snapshots": [], "frame": {"width": 14.2222, "height": 8.0}, "scene": scene,
                   "runtime_error": {"traceback": (proc.stderr or "worker crashed")[-3000:], "line": 0},
@@ -34,4 +35,14 @@ def lint_script(script: str, scene: str | None = None, timeout: int = 90,
     else:
         with open(out, encoding="utf-8") as fh:
             result = json.load(fh)
-    return build_report(result, script, thresholds, only)
+    return _finish(build_report(result, script, thresholds, only), result, script, spec)
+
+
+def _finish(report: dict, result: dict, script: str, spec: dict | None) -> dict:
+    if spec is not None:
+        from ipmotion import conformance
+        with open(script, encoding="utf-8") as fh:
+            text = fh.read()
+        report["conformance"] = conformance.check(text, result, spec)
+        report["conformance_ok"] = not report["conformance"]
+    return report

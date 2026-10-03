@@ -12,7 +12,7 @@ import tomllib
 import numpy as np
 
 _STYLE = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "style.toml")
-RECT_SHAPES = ("Rectangle", "RoundedRectangle", "Square")
+RECT_SHAPES = ("Rectangle", "RoundedRectangle", "Square", "DashedVMobject")
 
 
 def load_thresholds(path: str | None = None) -> dict:
@@ -140,9 +140,9 @@ def check_text_overlap(snap, frame, th):
     pad = th["text_overlap_pad"]
     units = snap["units"]
     by_id = {u["id"]: u for u in units}
-    texts = [u for u in units if u["kind"] == "text"]
-    blocks = [u for u in units if u["kind"] == "block"]
-    conns = [u for u in units if u["kind"] == "connector"]
+    texts = [u for u in units if u["kind"] == "text" and not u.get("transient")]
+    blocks = [u for u in units if u["kind"] == "block" and not u.get("transient")]
+    conns = [u for u in units if u["kind"] == "connector" and not u.get("transient")]
 
     for i, a in enumerate(texts):
         ba = _shrink(a["bbox"], pad)
@@ -187,10 +187,10 @@ def check_text_overlap(snap, frame, th):
 
 def check_text_occluded(snap, frame, th, grid=(12, 5)):
     out = []
-    fills = [f for f in snap["fills"] if f["fill"] >= th["occlusion_min_fill"]]
+    fills = [f for f in snap["fills"] if f["fill"] >= th["occlusion_min_fill"] and not f.get("transient")]
     by_id = {u["id"]: u for u in snap["units"]}
     for t in snap["units"]:
-        if t["kind"] != "text" or _area(t["bbox"]) <= 0:
+        if t["kind"] != "text" or _area(t["bbox"]) <= 0 or t.get("transient"):
             continue
         x0, y0, x1, y1 = t["bbox"]
         gx = np.linspace(x0, x1, grid[0] + 2)[1:-1]
@@ -227,8 +227,8 @@ def check_dangling_endpoint(snap, frame, th):
     out = []
     tol, jtol = th["endpoint_tolerance"], th["junction_tolerance"]
     units = snap["units"]
-    blocks = [u for u in units if u["kind"] == "block"]
-    conns = [u for u in units if u["kind"] == "connector" and u.get("segs")]
+    blocks = [u for u in units if u["kind"] == "block" and not u.get("transient")]
+    conns = [u for u in units if u["kind"] == "connector" and u.get("segs") and not u.get("transient")]
     fills = snap["fills"]
     for c in conns:
         for label, pt in (("start", c["segs"][0][:2]), ("end", c["segs"][-1][2:])):
@@ -306,7 +306,7 @@ def check_out_of_frame(snap, frame, th):
 def check_min_spacing(snap, frame, th):
     out = []
     units = snap["units"]
-    blocks = [u for u in units if u["kind"] == "block"]
+    blocks = [u for u in units if u["kind"] == "block" and not u.get("transient")]
     for i, a in enumerate(blocks):
         for b in blocks[i + 1:]:
             ov = _inter(_shrink(a["bbox"], 1e-3), _shrink(b["bbox"], 1e-3))
@@ -337,7 +337,7 @@ def check_min_spacing(snap, frame, th):
                 out.append(_issue("min_spacing", "error", [b, c],
                                   f"block {b['name']!r} straddles the border of container {c['name']!r}",
                                   ("strad", b["name"], c["name"])))
-    for t in (u for u in units if u["kind"] == "text" and u.get("owner") is None):
+    for t in (u for u in units if u["kind"] == "text" and u.get("owner") is None and not u.get("transient")):
         for b in blocks:
             g = _gap(t["bbox"], b["bbox"])
             if 0 < g < th["min_label_gap"] and _inter_area(t["bbox"], b["bbox"]) == 0:

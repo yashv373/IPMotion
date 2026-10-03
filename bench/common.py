@@ -50,6 +50,27 @@ def prompt_spec(spec_path: str) -> str:
     return yaml.safe_dump(d, sort_keys=False, allow_unicode=True, width=110)
 
 
+PROMPT_VERSION = 2          # v3 prompts with the LABELS/BANNERS block at the top (v2 runs use the old prompt)
+
+LABELS_RULES = """## READ THIS FIRST: LABELS AND BANNERS
+Start your script with this block EXACTLY as given (copy it, do not edit it):
+
+{block}
+
+Rules (a script that breaks them is rejected before it is even looked at):
+- Every block title, domain title, wire label, packet text, state text and step banner must come from LABELS or BANNERS
+  (for example IPBlock(LABELS["ibex_core"], ...), banner.update_text(BANNERS[2], theme)).
+- NEVER type any of these texts yourself, in any form. Do not rewrite, shorten, re-wrap or retype them.
+- NEVER use lint_ignore.
+"""
+
+
+def labels_block(spec_path: str) -> str:
+    from ipmotion import conformance
+    with open(spec_path, encoding="utf-8") as fh:
+        return LABELS_RULES.format(block=conformance.preamble(yaml.safe_load(fh)))
+
+
 def user_request(spec_path: str) -> str:
     return (SPEC_INSTRUCTIONS + "\n## SPEC\n```yaml\n" + prompt_spec(spec_path) + "```\n\n"
             "Generate the complete Manim animation script for this spec.")
@@ -119,7 +140,8 @@ def scene_name(script: str) -> str | None:
 
 
 def make_run_dir(spec_name: str, pipeline: str) -> str:
-    d = os.path.join(ROOT, "runs", f"{datetime.now():%Y%m%d_%H%M%S}_{spec_name}_{pipeline}")
+    base = os.environ.get("IPMOTION_RUNS_DIR") or os.path.join(ROOT, "runs")      # tests redirect this
+    d = os.path.join(base, f"{datetime.now():%Y%m%d_%H%M%S}_{spec_name}_{pipeline}")
     os.makedirs(d)
     return d
 

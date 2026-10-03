@@ -20,7 +20,7 @@ import copy
 
 import manim
 import numpy as np
-from manim import Mobject, Scene, config, tempconfig
+from manim import Mobject, Scene, Transform, config, tempconfig
 from manim.utils.color import ManimColor
 from manim.constants import DEFAULT_WAIT_TIME
 
@@ -61,6 +61,15 @@ def _fast_deepcopy(self, memo):
     return result
 
 
+def _sync_text(target, source):
+    """After a Transform the glyphs show the new string but .text is stale; copy it (pairwise over equal-length groups)."""
+    if isinstance(getattr(target, "text", None), str) and isinstance(getattr(source, "text", None), str):
+        target.text = source.text
+    elif len(target.submobjects) == len(source.submobjects):
+        for a, b in zip(target.submobjects, source.submobjects):
+            _sync_text(a, b)
+
+
 def _user_frames(skip: int):
     """Frames from the caller of play()/wait() outward, up to and including construct()."""
     frames, f = [], sys._getframe(skip)
@@ -99,6 +108,13 @@ def run_scene(scene_cls, script_path: str | None = None, fast_copy: bool = True)
     """Run scene_cls in this process. Returns {'snapshots', 'frame', 'runtime_error', 'seconds'}."""
     rec = _Recorder()
     orig_play, orig_wait, orig_copy, orig_add = Scene.play, Scene.wait, Mobject.__deepcopy__, Scene.add
+    orig_finish = Transform.finish
+
+    def synced_finish(self):
+        orig_finish(self)
+        tgt = getattr(self, "target_mobject", None)
+        if tgt is not None and self.mobject is not None:
+            _sync_text(self.mobject, tgt)
 
     def fast_play(self, *args, subcaption=None, subcaption_duration=None,
                   subcaption_offset=0, **kwargs):
@@ -133,6 +149,7 @@ def run_scene(scene_cls, script_path: str | None = None, fast_copy: bool = True)
     with tempconfig({"dry_run": True, "progress_bar": "none", "verbosity": "ERROR",
                      "disable_caching": True, "media_dir": media}):
         Scene.play, Scene.wait, Scene.add = fast_play, fast_wait, lint_add
+        Transform.finish = synced_finish
         if fast_copy:
             Mobject.__deepcopy__ = _fast_deepcopy
         try:
@@ -144,6 +161,7 @@ def run_scene(scene_cls, script_path: str | None = None, fast_copy: bool = True)
             err = {"traceback": tb[-3000:], "line": rec.last_line}
         finally:
             Scene.play, Scene.wait, Scene.add = orig_play, orig_wait, orig_add
+            Transform.finish = orig_finish
             Mobject.__deepcopy__ = orig_copy
         frame = {"width": float(config.frame_width), "height": float(config.frame_height)}
     return {"snapshots": rec.snaps, "frame": frame, "runtime_error": err,

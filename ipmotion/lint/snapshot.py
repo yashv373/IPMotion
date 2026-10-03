@@ -15,7 +15,7 @@ from __future__ import annotations
 
 import numpy as np
 from manim import (
-    Line, Mobject, MarkupText, Rectangle, Text, VMobject,
+    DashedVMobject, Line, Mobject, MarkupText, Rectangle, Text, VMobject,
 )
 from manim.utils.family import extract_mobject_family_members
 
@@ -34,6 +34,7 @@ CONTAINER_TYPES = _types("Banner", "DomainGroup")      # own their title text
 GLOW_TYPES = _types("GlowBox")                         # standalone packets etc.
 ROUTE_TYPES = _types("Wire", "DirectRoute", "ManhattanRoute")  # Connection subclasses ManhattanRoute
 
+PACKET_MAX_W, PACKET_MAX_H = 2.2, 1.1   # standalone GlowBoxes up to this size count as packets
 VISIBLE = 0.02          # opacity below this counts as invisible
 GLOW_MAX_OPACITY = 0.3  # connector strokes at or below this are glow copies
 FILL_RECORD_MIN = 0.3   # leaves with fill >= this are kept as possible occluders
@@ -178,7 +179,14 @@ def _classify(chain: list[Mobject]):
     for a in chain:
         if isinstance(a, Line):
             return "connector", a
+    for a in chain:
+        if isinstance(a, DashedVMobject):        # its dashes are one outline, not dozens of shapes
+            return "shape", a
     return "shape", chain[0]
+
+
+def _transient(chain: list[Mobject]) -> bool:
+    return any(getattr(a, "lint_transient", False) for a in chain)
 
 
 def _ignores(chain: list[Mobject]) -> list[str]:
@@ -233,6 +241,7 @@ def take_snapshot(scene, names: dict[int, str]) -> dict:
             if u is None:
                 u = units[id(root)] = _Unit("text", root)
                 u.extra["ignore"] = _ignores(chain)
+                u.extra["transient"] = _transient(chain)
             if visible >= VISIBLE:
                 u.bbox = _merge(u.bbox, _bbox_of_points(xy))
                 u.touch(order)
@@ -247,9 +256,12 @@ def take_snapshot(scene, names: dict[int, str]) -> dict:
             if u is None:
                 u = units[id(root)] = _Unit("connector", root)
                 u.extra["ignore"] = _ignores(chain)
+                u.extra["transient"] = _transient(chain)
             if isinstance(leaf, Line) and stroke > GLOW_MAX_OPACITY:
                 s, e = leaf.get_start(), leaf.get_end()
                 u.segs.append([_r(s[0]), _r(s[1]), _r(e[0]), _r(e[1])])
+                u.extra.setdefault("seg_tips", []).append(
+                    [bool(leaf.has_start_tip()), bool(leaf.has_tip())])
                 seg_pts = np.array([s[:2], e[:2]])
                 u.bbox = _merge(u.bbox, _bbox_of_points(seg_pts))
                 u.bbox = _merge(u.bbox, _bbox_of_points(xy))
@@ -261,14 +273,17 @@ def take_snapshot(scene, names: dict[int, str]) -> dict:
             continue
 
         # block / container / shape
-        key = id(root) if kind in ("block", "container") else id(leaf)
+        key = id(root) if (kind in ("block", "container") or root is not leaf) else id(leaf)
         u = units.get(key)
         if u is None:
             real_kind = kind
             if kind == "shape" and isinstance(leaf, Rectangle) and fill >= 0.5:
                 real_kind = "block"
-            u = units[key] = _Unit(real_kind, root if kind != "shape" else leaf)
+            u = units[key] = _Unit(real_kind, root)
             u.extra["ignore"] = _ignores(chain)
+            # standalone GlowBox (not part of an IPBlock) is a packet/glow token
+            u.extra["transient"] = _transient(chain)
+            u.extra["glow_root"] = isinstance(root, GLOW_TYPES)      # packet-sized ones are made transient below
         u.bbox = _merge(u.bbox, _bbox_of_points(xy))
         u.touch(order)
         u.fill = max(u.fill, fill)
@@ -308,6 +323,22 @@ def take_snapshot(scene, names: dict[int, str]) -> dict:
             if best:
                 u.owner_root = best[1]
 
+    for u in units.values():
+        if u.extra.get("glow_root") and u.bbox is not None:
+            if (u.bbox[2] - u.bbox[0]) <= PACKET_MAX_W and (u.bbox[3] - u.bbox[1]) <= PACKET_MAX_H:
+                u.extra["transient"] = True          # a standalone packet-sized GlowBox is a travelling token
+    transient_blocks = [(k, u) for k, u in units.items()
+                        if u.kind == "block" and u.extra.get("transient") and u.bbox is not None]
+    for key, u in units.items():
+        if u.kind == "text" and u.bbox is not None and u.owner_root is None and not u.extra.get("transient"):
+            cx, cy = (u.bbox[0] + u.bbox[2]) / 2, (u.bbox[1] + u.bbox[3]) / 2
+            for k2, tb in transient_blocks:
+                b = tb.bbox
+                if b[0] <= cx <= b[2] and b[1] <= cy <= b[3]:
+                    u.extra["transient"] = True
+                    u.owner_root = id(tb.root)
+                    break
+
     # assign sequential ids, then translate owner roots / unit keys into ids
     ordered = [(k, u) for k, u in units.items() if u.bbox is not None]
     ids = {k: i for i, (k, _) in enumerate(ordered)}
@@ -320,7 +351,8 @@ def take_snapshot(scene, names: dict[int, str]) -> dict:
         name = names.get(id(u.root))
         d = {"id": ids[k], "kind": u.kind, "cls": type(u.root).__name__,
              "bbox": _rbox(u.bbox), "order": u.order_max, "order_min": u.order_min,
-             "fill": _r(u.fill), "stroke": _r(u.stroke), "ignore": u.extra.get("ignore", [])}
+             "fill": _r(u.fill), "stroke": _r(u.stroke), "ignore": u.extra.get("ignore", []),
+             "transient": bool(u.extra.get("transient"))}
         if u.kind == "text":
             font = getattr(u.root, "font", "Consolas") or "Consolas"
             try:
@@ -335,6 +367,8 @@ def take_snapshot(scene, names: dict[int, str]) -> dict:
                 name = f"Text({d['text'][:24]!r})"
         elif u.kind == "connector":
             d["segs"] = u.segs
+            tips = u.extra.get("seg_tips") or []
+            d["tips"] = [bool(tips[0][0]), bool(tips[-1][1])] if tips else [False, False]
             if not u.segs and u.bbox is None:
                 continue
         if name is None:
@@ -342,8 +376,10 @@ def take_snapshot(scene, names: dict[int, str]) -> dict:
         d["name"] = name
         out_units.append(d)
 
+    transient_ids = {ids[k] for k, u in ordered if u.extra.get("transient")}
     for f in fills:
         f["unit"] = ids.get(f.pop("unit_key"))
+        f["transient"] = f["unit"] in transient_ids
     for p in ports:
         orr = p.pop("owner_root")
         p["owner"] = root_to_id.get(orr) if orr is not None else None

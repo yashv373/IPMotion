@@ -282,6 +282,17 @@ class Wire(VGroup):
         else:
             self.add(Arrow(start_pt, end_pt, color=color, stroke_width=4, buff=0, max_tip_length_to_length_ratio=0.1))
 
+class Packet(VGroup):
+    """A labelled token that travels along a wire. Transient: the linter skips spacing/overlap checks for it
+    (it is meant to sit on top of wires and block edges); out_of_frame and min_text_size still apply."""
+    lint_transient = True
+
+    def __init__(self, label, color, theme, width=0.8, height=0.4, font_size=12):
+        super().__init__()
+        self.bg = GlowBox(width, height, color, color)
+        self.txt = ui_text(label, font_size, theme.background, BOLD).move_to(self.bg)
+        self.add(self.bg, self.txt)
+
 class DirectRoute(VGroup):
     def __init__(self, source_box, target_box, color):
         super().__init__()
@@ -290,8 +301,7 @@ class DirectRoute(VGroup):
         self.add(self.glow, self.line)
 
     def transfer(self, label, color, theme, run_time=1.0):
-        pkt_bg = GlowBox(0.8, 0.4, color, color)
-        pkt = VGroup(pkt_bg, ui_text(label, 12, theme.background, BOLD))
+        pkt = Packet(label, color, theme)
         pkt.move_to(self.line.get_start())
         return Succession(
             FadeIn(pkt, run_time=0.2),
@@ -315,8 +325,7 @@ class ManhattanRoute(VGroup):
         self.add(self.glow_path, self.path)
 
     def transfer(self, label, color, theme, run_time=1.5):
-        pkt_bg = GlowBox(0.8, 0.4, color, color)
-        pkt = VGroup(pkt_bg, ui_text(label, 12, theme.background, BOLD))
+        pkt = Packet(label, color, theme)
         pkt.move_to(self.pts[0])
         anims = [FadeIn(pkt, run_time=0.2)]
         segment_time = (run_time - 0.4) / (len(self.pts) - 1)
@@ -341,6 +350,14 @@ class Connection(ManhattanRoute):
         pts = route_points(src.get_center(), src.side, dst.get_center(), dst.side, style, stub)
         super().__init__(pts, color)
 
+class TextTransform(Transform):
+    """Transform between two Text objects that also updates the .text attribute when it finishes
+    (a plain Transform morphs the glyphs but leaves .text stale, so tools reading .text see the old string)."""
+    def finish(self):
+        super().finish()
+        if hasattr(self.target_mobject, "text"):
+            self.mobject.text = self.target_mobject.text
+
 class Banner(VGroup):
     def __init__(self, title, theme):
         super().__init__()
@@ -354,7 +371,7 @@ class Banner(VGroup):
         # group=self keeps the Banner itself as the animated mobject. Without it Manim re-adds
         # Group(txt, bg) to the scene, which draws the 0.9-opacity bg OVER the new text.
         return AnimationGroup(
-            Transform(self.txt, new_txt),
+            TextTransform(self.txt, new_txt),
             self.bg.animate.set_color(c) if color else Wait(0.1),
             group=self,
         )

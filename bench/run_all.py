@@ -46,7 +46,7 @@ def main() -> int:
     st = load_state()
     for rep in range(1, a.reps + 1):
         for pipe in ("v2", "v3"):
-            key = f"{a.spec}|{pipe}|{rep}"
+            key = f"{a.spec}|{pipe}|{rep}" + (f"|p{C.PROMPT_VERSION}" if pipe == "v3" else "")   # old-prompt v3 jobs never count
             if st["jobs"].get(key, {}).get("status") == "done":
                 print(f"skip {key} (done)")
                 continue
