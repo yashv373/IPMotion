@@ -39,6 +39,8 @@ def truth_labels() -> set[str]:
     """Distinctive printed labels from every truth file (lowercased)."""
     labels: set[str] = set()
     for f in truth_files():
+        if f.endswith(".layout.yaml"):          # positions only (ids and pixels), no labels; still protected by DENY_DIRS
+            continue
         with open(f, encoding="utf-8") as fh:
             d = yaml.safe_load(fh) or {}
         for key in ("blocks", "externals", "regions"):

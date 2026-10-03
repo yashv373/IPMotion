@@ -15,9 +15,10 @@ _STYLE = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))
 RECT_SHAPES = ("Rectangle", "RoundedRectangle", "Square", "DashedVMobject")
 
 
-def load_thresholds(path: str | None = None) -> dict:
+def load_thresholds(path: str | None = None, full: bool = False) -> dict:
     with open(path or _STYLE, "rb") as fh:
-        return tomllib.load(fh)["lint"]
+        data = tomllib.load(fh)
+    return {**data["lint"], **(data.get("lint_full", {}) if full else {})}
 
 
 # ------------------------------------------------------------- geometry
@@ -233,6 +234,13 @@ def check_dangling_endpoint(snap, frame, th):
     for c in conns:
         for label, pt in (("start", c["segs"][0][:2]), ("end", c["segs"][-1][2:])):
             if any(math.hypot(pt[0] - p["xy"][0], pt[1] - p["xy"][1]) <= tol for p in snap["ports"]):
+                continue
+            # a wire may also end on a text label, or on the border of a region (a pin on the chip boundary)
+            if any(_point_box(pt, t["bbox"])[0] <= tol for t in units
+                   if t["kind"] == "text" and not t.get("transient") and t.get("owner") is None):   # free labels only, not a block's own title
+                continue
+            if any((lambda o_i: o_i[0] <= tol if o_i[0] > 0 else o_i[1] <= tol)(_point_box(pt, c["bbox"]))
+                   for c in units if c["kind"] == "container"):
                 continue
             nearest, inside_in = None, None
             ok = False

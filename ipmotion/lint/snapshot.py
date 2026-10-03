@@ -164,6 +164,9 @@ def _classify(chain: list[Mobject]):
     for a in chain:
         if isinstance(a, (Text, MarkupText)):
             return "text", a
+    for a in chain:
+        if getattr(a, "lint_container", False):
+            return "container", a
     strong = [a for a in chain if isinstance(a, STRONG_TYPES)]
     if strong:
         return "block", strong[-1]                        # outermost
@@ -176,9 +179,15 @@ def _classify(chain: list[Mobject]):
     for a in chain:
         if isinstance(a, ROUTE_TYPES):
             return "connector", a
-    for a in chain:
+    for i, a in enumerate(chain):
         if isinstance(a, Line):
-            return "connector", a
+            top = a
+            for up in chain[i + 1:]:                 # a dash or an arrow tip belongs to the Line that holds it
+                if isinstance(up, Line):
+                    top = up
+                else:
+                    break
+            return "connector", top
     for a in chain:
         if isinstance(a, DashedVMobject):        # its dashes are one outline, not dozens of shapes
             return "shape", a
@@ -257,7 +266,23 @@ def take_snapshot(scene, names: dict[int, str]) -> dict:
                 u = units[id(root)] = _Unit("connector", root)
                 u.extra["ignore"] = _ignores(chain)
                 u.extra["transient"] = _transient(chain)
-            if isinstance(leaf, Line) and stroke > GLOW_MAX_OPACITY:
+            if root is not leaf and isinstance(root, Line):
+                # a dash or tip inside a bigger Line (DashedLine / Arrow): one segment for the whole line
+                u.bbox = _merge(u.bbox, _bbox_of_points(xy))
+                u.touch(order)
+                u.stroke = max(u.stroke, stroke)
+                if not u.segs and (stroke > GLOW_MAX_OPACITY or fill > GLOW_MAX_OPACITY):
+                    try:
+                        # a DashedLine keeps its true endpoints in .start/.end (get_start() reads the first dash/tip)
+                        s = getattr(root, "start", None)
+                        e = getattr(root, "end", None)
+                        if s is None or e is None:
+                            s, e = root.get_start(), root.get_end()
+                        u.segs.append([_r(s[0]), _r(s[1]), _r(e[0]), _r(e[1])])
+                        u.extra.setdefault("seg_tips", []).append([bool(root.has_start_tip()), bool(root.has_tip())])
+                    except Exception:
+                        pass
+            elif isinstance(leaf, Line) and stroke > GLOW_MAX_OPACITY:
                 s, e = leaf.get_start(), leaf.get_end()
                 u.segs.append([_r(s[0]), _r(s[1]), _r(e[0]), _r(e[1])])
                 u.extra.setdefault("seg_tips", []).append(
@@ -267,7 +292,7 @@ def take_snapshot(scene, names: dict[int, str]) -> dict:
                 u.bbox = _merge(u.bbox, _bbox_of_points(xy))
                 u.touch(order)
                 u.stroke = max(u.stroke, stroke)
-            elif stroke > GLOW_MAX_OPACITY or fill > GLOW_MAX_OPACITY:   # arrow tip
+            elif stroke > GLOW_MAX_OPACITY or fill > GLOW_MAX_OPACITY:   # arrow tip, or one dash of a DashedLine
                 u.bbox = _merge(u.bbox, _bbox_of_points(xy))
                 u.touch(order)
             continue

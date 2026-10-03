@@ -266,3 +266,11 @@ def test_block_with_ports_deep_copies_and_copy_ports_belong_to_the_copy():
         assert dup is not b and dup.port("OUT").owner is dup
         assert dup.port("OUT") is not b.port("OUT")
         assert close(dup.port("OUT").get_center(), b.port("OUT").get_center())
+
+
+def test_tiny_block_title_is_not_rotated():
+    """A block shorter than 0.2 units used to get a negative title scale (text rotated 180 degrees)."""
+    b = IPBlock("Base\nAddr\nTranslation", TH, width=0.68, height=0.16)
+    g = b.txt.submobjects
+    assert g[0].get_center()[0] < g[-1].get_center()[0] and g[0].get_center()[1] > g[-1].get_center()[1]
+    assert b.txt.height > 0 and b.txt.width > 0

@@ -211,8 +211,10 @@ class IPBlock(PortMixin, VGroup):
             title = " "
         self.txt = Text(title, font=font, font_size=16, color=tc, weight=BOLD, line_spacing=0.6).move_to(self.bg)
         
-        max_w = width - 0.2
-        max_h = height - 0.2
+        # fixed 0.2 padding, but never below half the block (a block under 0.2 tall used to get a NEGATIVE size,
+        # which rotated the title 180 degrees)
+        max_w = max(width - 0.2, width * 0.5)
+        max_h = max(height - 0.2, height * 0.5)
         if self.txt.width > max_w and self.txt.width > 0:
             self.txt.scale(max_w / self.txt.width)
         if self.txt.height > max_h and self.txt.height > 0:

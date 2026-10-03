@@ -1,0 +1,34 @@
+# A STORY: only what should happen. The whole diagram (44 blocks, 5 outside items, 4 regions, 61 connections)
+# comes from bench/truth/opentitan_darjeeling.yaml automatically. Ids are the ids used in that truth file.
+source: opentitan_darjeeling
+title: "Darjeeling: Ibex reads from the UART / I2C"
+description: >
+  Ibex Core sends a read through the Main TL-UL Crossbar and the Peri TL-UL Cross bar to the 1 x UART / 1x I2C.
+  The response goes back over the same links.
+
+sequence:
+  - banner: "Idle: nothing is happening yet"
+  - banner: "Step 1: Ibex Core sends a read request"
+    highlight: [ibex_core]
+    activate: [c01]
+    packets: [{conn: c01, label: "Read req"}]
+  - banner: "Step 2: Main TL-UL Crossbar passes it to the Low-Speed domain"
+    highlight: [main_tlul_crossbar]
+    activate: [c30]
+    packets: [{conn: c30, label: "Read req"}]
+  - banner: "Step 3: Peri TL-UL Cross bar sends it to 1 x UART / 1x I2C"
+    highlight: [peri_tlul_crossbar]
+    activate: [c40]
+    packets: [{conn: c40, label: "Read req"}]
+  - banner: "Step 4: 1 x UART / 1x I2C answers"
+    highlight: [uart_i2c]
+    activate: [c40]
+  - banner: "Step 5: The response travels back over the same links"
+    highlight: [peri_tlul_crossbar, main_tlul_crossbar]
+    activate: [c40, c30, c01]
+    packets: [{conn: c40, label: "response", kind: response}, {conn: c30, label: "response", kind: response}]
+  - banner: "Step 6: Ibex Core receives the data. Read complete"
+    highlight: [ibex_core]
+    activate: [c01]
+    packets: [{conn: c01, label: "response", kind: response}]
+    hold: 1.5

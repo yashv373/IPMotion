@@ -16,6 +16,9 @@ def lint_script(script: str, scene: str | None = None, timeout: int = 90,
                 thresholds: dict | None = None, only: list[str] | None = None, spec: dict | None = None) -> dict:
     """With spec=..., the report also carries report['conformance'] (list of error issues) and conformance_ok."""
     script = os.path.abspath(script)
+    if thresholds is None and spec is not None and spec.get("scope") == "full":
+        from ipmotion.lint.checks import load_thresholds
+        thresholds = load_thresholds(full=True)
     work = tempfile.mkdtemp(prefix="ipm_lintrun_")
     out = os.path.join(work, "snapshots.json")
     env = dict(os.environ)

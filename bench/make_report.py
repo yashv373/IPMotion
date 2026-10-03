@@ -78,6 +78,9 @@ def load_runs():
     runs, skipped = {}, 0
     for f in sorted(glob.glob(os.path.join(ROOT, "runs", "*", "final.json"))):
         r = json.load(open(f, encoding="utf-8"))
+        if r["pipeline"] == "v4":                       # drawn by code, no AI model involved
+            runs[(r["spec"], "v4", r.get("rep", 1))] = (os.path.dirname(f), r)
+            continue
         if r.get("model") != MODEL or (r["pipeline"] == "v3" and r.get("prompt_version") != PROMPT_VERSION):
             skipped += 1
             continue
@@ -162,10 +165,102 @@ def run_card(spec, run_dir, r, has_ref):
 </div>"""
 
 
+def full_reference(source_png: str):
+    im = Image.open(os.path.join(ROOT, source_png)).convert("RGB")
+    buf = io.BytesIO()
+    im.save(buf, "PNG")
+    return buf.getvalue(), im.width, im.height
+
+
+def crop_png(source_png: str, box, pad=28, max_w=420):
+    im = Image.open(os.path.join(ROOT, source_png)).convert("RGB")
+    x0, y0, x1, y1 = max(0, box[0] - pad), max(0, box[1] - pad), min(im.width, box[2] + pad), min(im.height, box[3] + pad)
+    c = im.crop((x0, y0, x1, y1))
+    k = max(1, min(4, max_w // max(c.width, 1)))
+    c = c.resize((c.width * k, c.height * k), Image.LANCZOS)
+    d = ImageDraw.Draw(c)
+    d.rectangle(((box[0] - x0) * k, (box[1] - y0) * k, (box[2] - x0) * k, (box[3] - y0) * k), outline=(255, 160, 0), width=2)
+    buf = io.BytesIO()
+    c.save(buf, "PNG")
+    return buf.getvalue()
+
+
+def v4_cards(run_dir, r):
+    """Full-diagram result: reference | render, closeness in plain words, and the 'please check these' panel."""
+    sys.path.insert(0, ROOT)
+    from ipmotion.diagram import load
+    truth, layout = load(r["source"])
+    f = r.get("fidelity") or {}
+    fr = r.get("final_frames") or {}
+    last = img_tag(run_dir, fr.get("last", ""), "What the computer drew (last moment of the animation)", "big")
+    ref_png = full_reference(r["reference"])
+    ref = (f'<figure class="ref"><div class="refpic r_full_{r["source"]}"></div>'
+           f'<figcaption>REFERENCE: the real diagram, the only truth.</figcaption></figure>')
+    kind, line = verdict(r)
+    rows = [
+        ("Blocks drawn with the exact name", f"{f.get('blocks_ok', '?')} of {f.get('blocks_total', '?')}"),
+        ("Regions with the right name and the right blocks inside", f"{f.get('regions_ok', '?')} of {f.get('regions_total', '?')}"),
+        ("Sure lines drawn between the right blocks, arrows the right way", f"{f.get('wires_ok', '?')} of {f.get('wires_total', '?')}"),
+        ("Extra things drawn that are not in the picture", f"{f.get('extras', '?')}"),
+        ("Blocks keep the picture's left/right and above/below order", f"{f.get('layout_percent', '?')}% of block pairs"),
+        ("Not sure about (drawn in amber dashes, see below)", f"{len(f.get('unconfirmed', []))} items"),
+        ("Layout check problems / spec check problems", f"{r.get('final_lint_errors', '?')} / {r.get('final_conformance_errors', '?')}"),
+    ]
+    table = "".join(f"<tr><td>{html.escape(a)}</td><td><b>{html.escape(b)}</b></td></tr>" for a, b in rows)
+    honest = ('<div class="status"><b>Be careful with these numbers.</b> They compare the drawing with my written notes of the '
+              'picture, not with the picture itself. You are the judge: look at the reference on the left and the drawing on the right.</div>')
+    keys = "".join(img_tag(run_dir, fr[k], cap, "small") for k, cap in
+                   (("key_25", "about 25% through"), ("key_50", "about half way"), ("key_75", "about 75% through")) if k in fr)
+    items = []
+    unclear = {c["id"]: c.get("unclear", "") for c in truth["connections"] if "unclear" in c}
+    unclear.update({b["id"]: b.get("unclear", "") for b in truth["blocks"] if "unclear" in b})
+    for u in f.get("unconfirmed", []):
+        L = layout["blocks"]
+        if u["kind"] == "wire":
+            route = layout["routes"].get(u["id"], {})
+            if "route" in route:
+                xs = [pt[0] for pt in route["route"]]
+                ys = [pt[1] for pt in route["route"]]
+                box = (min(xs), min(ys), max(xs), max(ys))
+            else:
+                a = L.get(str(u["from"]).split(".")[0]) or [0, 0, 1, 1]
+                b = L.get(str(u["to"]).split(".")[0]) or a
+                box = (min(a[0], b[0]), min(a[1], b[1]), max(a[2], b[2]), max(a[3], b[3]))
+            what = f"Line {u['id']}: {u['from']} to {u['to']}"
+        else:
+            box = tuple(L[u["id"]])
+            what = f"Block: {u['label']}"
+        png = crop_png(r["reference"], box)
+        items.append(f'<div class="conf"><img src="data:image/png;base64,{b64(png)}"><div><b>{html.escape(what)}</b>'
+                     f'<p>Why I am unsure: {html.escape(unclear.get(u["id"], ""))}</p>'
+                     f'<p class="ask">Please look at the picture: is this there, and does it go where I drew it?</p></div></div>')
+    confirm = ('<h4>Please check these (what I am not sure about)</h4><p class="blurb">Each one is drawn in amber dashes in the animation so it '
+               'is never mistaken for a sure line. The orange box on the crop shows where to look in the reference.</p>' + "".join(items)) if items else ""
+    css = (f".r_full_{r['source']}{{background:url(data:image/png;base64,{b64(ref_png[0])}) center/contain no-repeat;"
+           f"aspect-ratio:{ref_png[1]}/{ref_png[2]};width:100%}}")
+    body = (f'<div class="card"><div class="verdict {kind}">{html.escape(line)}</div>{honest}'
+            f'<div class="pair">{ref}{last}</div><table class="sum">{table}</table>'
+            f'{("<p class=lbl>Other moments of the same animation:</p><div class=row>" + keys + "</div>") if keys else ""}'
+            f'{confirm}</div>')
+    return css, body
+
+
 def main():
     runs, skipped, model = load_runs()
     specs = [s for s in SPEC_ORDER if any(k[0] == s for k in runs)] + sorted({k[0] for k in runs} - set(SPEC_ORDER))
     css_refs, body, rows = [], [], []
+    full_html = ""
+    for k in sorted(k for k in runs if k[1] == "v4"):
+        d_, r_ = runs[k]
+        css_, card_ = v4_cards(d_, r_)
+        css_refs.append(css_)
+        full_html += (f"<section><h2>Full diagram test: {html.escape(k[0])}</h2>"
+                      f"<p class='blurb'>The whole reference diagram is drawn by code from my notes of the picture (positions taken from the picture itself), "
+                      f"then a short story is played on it. No AI wrote any of this code.</p>{card_})</section>")
+        l_, c_ = r_.get("final_lint_errors"), r_.get("final_conformance_errors")
+        rows.append(f"<tr><td>{html.escape(k[0])}</td><td>full diagram (code)</td><td>1</td><td>{l_}</td><td>{c_}</td>"
+                    f"<td class='{'ok' if is_clean(r_) else 'bad'}'>{'yes' if is_clean(r_) else 'no'}</td></tr>")
+    specs = [x for x in specs if not any(k[0] == x and k[1] == "v4" and not any(kk[0] == x and kk[1] != "v4" for kk in runs) for k in runs)]
     for s in specs:
         ref = reference_png(s)
         if ref:
@@ -211,6 +306,7 @@ h1{{margin:0 0 4px}}h2{{margin-top:36px;border-top:1px solid #223;padding-top:18
 .row{{display:flex;gap:10px;flex-wrap:wrap}}.small{{flex:1 1 30%;min-width:200px;margin:0}}
 .nopic{{background:#1a2330;border-radius:6px;padding:40px 16px;text-align:center;color:#8aa0b6}}
 .lbl{{margin:14px 0 4px;color:#8aa0b6}}.facts{{color:#8aa0b6}}ul{{margin:4px 0 4px 18px;padding:0}}details{{margin:8px 0}}summary{{cursor:pointer;color:#9ad}}
+.conf{{display:flex;gap:14px;align-items:flex-start;background:#0f1620;border-radius:6px;padding:10px;margin:8px 0}}.conf img{{max-width:46%;border-radius:4px}}.conf p{{margin:4px 0}}.ask{{color:#ffd700}}
 .sum{{border-collapse:collapse;width:100%}}.sum th,.sum td{{padding:6px 12px 6px 0;border-bottom:1px solid #223;text-align:left}}.ok{{color:#39ff14}}.bad{{color:#ff5c7a}}
 {''.join(css_refs)}
 </style>
@@ -220,11 +316,13 @@ h1{{margin:0 0 4px}}h2{{margin-top:36px;border-top:1px solid #223;padding-top:18
 <li>Each test gives the computer a short description (a "spec") of a few blocks and one story, and asks it to make an animation.</li>
 <li><b>Left: the REFERENCE</b>, the real architecture diagram. It is the only truth. The yellow boxes show the few blocks this test draws (the test is a small piece of the whole chip, so the animation will not show everything).</li>
 <li><b>Right: what the computer drew.</b> Compare the two: are the same blocks there, with the same names, in the same regions, with arrows going the same way?</li>
+<li>The <b>Full diagram test</b> (at the top) is the real goal: the whole reference diagram, redrawn by code, with a short story played on it. Everything below it is the older test with the AI writing the code.</li>
 <li>Two pipelines are compared. <b>v2</b> is the old way; <b>v3</b> is the new way with automatic checks. Each is run several times, because the AI gives a different answer each time.</li>
 <li>Two automatic checks: the <b>layout check</b> (text overlapping, things cut off, things too small) and the <b>spec check</b> (right names, right blocks, right arrows, right step titles).</li>
 </ul></div>
 {status}
 {('<h2>All runs at a glance</h2>' + table) if table else ''}
+{full_html}
 {''.join(body)}
 <p class="facts">{skipped} older run(s) are hidden because they used a different AI model or an older prompt.</p>"""
     out = os.path.join(ROOT, "bench", "report.html")

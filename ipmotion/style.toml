@@ -26,3 +26,10 @@ junction_tolerance = 0.05       # ...or this close to another connector
 # min_text_size: cap height of the rendered glyphs, in pixels at reference_height_px
 min_text_cap_px_error = 9
 min_text_cap_px_warn = 12
+
+# Dense full-diagram mode (spec scope: full). The reference diagram's own text is only ~8 px cap height when the whole
+# figure fills a 1080p frame, so the limits are set from that measurement instead of the normal 9 / 12 px.
+[lint_full]
+min_block_gap = 0.05            # the reference packs blocks ~8 px apart
+min_text_cap_px_error = 6.5
+min_text_cap_px_warn = 8

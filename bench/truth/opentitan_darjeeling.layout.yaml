@@ -1,0 +1,206 @@
+# LAYOUT for opentitan_darjeeling.yaml: where things are on the reference image (pixels). Never indexed, never in prompts.
+source_image: opentitan_archs/top_darjeeling_block_diagram.png
+image_size: [862, 984]
+note: 'Pixel boxes detected from the reference image fills; routes read from a gridded view. Units: image pixels.'
+regions:
+  wrapper: [8, 8, 853, 898]
+  ip: [24, 56, 840, 707]
+  hi: [40, 96, 478, 597]
+  lo: [488, 96, 823, 597]
+blocks:
+  ibex_core: [61, 136, 238, 224]
+  interrupt_controller: [264, 136, 359, 184]
+  rom_partitions: [368, 136, 463, 184]
+  main_sram: [264, 200, 359, 248]
+  shared_mailbox_sram: [368, 200, 463, 248]
+  main_tlul_crossbar: [56, 264, 463, 327]
+  otbn: [56, 344, 152, 391]
+  kmac: [160, 344, 255, 391]
+  edn_0_1: [264, 344, 359, 391]
+  csrng: [368, 344, 463, 391]
+  key_manager_dpe: [56, 408, 152, 455]
+  hmac: [160, 408, 255, 455]
+  aes: [264, 408, 359, 455]
+  debug_module: [368, 408, 463, 455]
+  dma: [56, 472, 152, 519]
+  soc_proxy: [160, 472, 255, 582]
+  nine_x_mailboxes: [264, 472, 359, 519]
+  jtag_mailbox: [368, 472, 463, 519]
+  mbx_tlul_crossbar: [264, 536, 359, 583]
+  dbg_tlul_crossbar: [368, 536, 463, 583]
+  access_ctrl_range_check: [104, 645, 199, 692]
+  racl_control: [232, 645, 327, 692]
+  jtag_tap: [568, 720, 663, 767]
+  analog_sensor_top: [712, 720, 807, 767]
+  ctn_tlul_crossbar: [56, 760, 463, 823]
+  shared_ctn_sram: [96, 840, 191, 887]
+  shared_peripherals: [232, 840, 327, 887]
+  timers: [512, 136, 607, 184]
+  peri_tlul_crossbar: [624, 136, 695, 583]
+  gpio_32bit: [712, 136, 807, 184]
+  retention_sram: [512, 200, 607, 248]
+  spi_device: [712, 200, 807, 248]
+  spi_host: [712, 280, 807, 327]
+  alert_handler: [512, 344, 607, 391]
+  uart_i2c: [712, 344, 807, 392]
+  otp_fuse_controller: [512, 408, 607, 455]
+  pinmux: [712, 408, 807, 455]
+  soc_debug_controller: [512, 472, 607, 519]
+  sensor_control: [712, 472, 807, 519]
+  life_cycle_controller: [512, 536, 607, 583]
+  pwr_clk_rst_mgrs: [712, 536, 807, 583]
+  shared_pinmux: [368, 840, 463, 887]
+  padring: [566, 797, 807, 865]
+  base_addr_translation: [164, 559, 252, 580]
+  external_peripherals: [590, 918, 688, 967]
+  external_spi_flash: [704, 918, 800, 967]
+labels:
+  dma_system_egress: [8, 578, 90, 606]
+  irqs_and_alerts: [16, 655, 62, 690]
+  ctn_ingress_egress: [16, 815, 62, 868]
+extras:
+  dual_lockstep_shadow: [66, 160, 250, 247]
+  soc_proxy_trapezoid: [175, 537, 247, 555]
+routes:
+  c01: {at: 159}
+  c02: {at: 311}
+  c03: {at: 311}
+  c04: {at: 415}
+  c05: {at: 415}
+  c06: {at: 104}
+  c07: {at: 207}
+  c08: {at: 311}
+  c09: {at: 415}
+  c10: {at: 104}
+  c11: {at: 207}
+  c12: {at: 311}
+  c13: {at: 416}
+  c14: {at: 448}
+  c15:
+    route:
+    - [76, 519]
+    - [76, 570]
+    - [2, 570]
+  c16:
+    route:
+    - [125, 519]
+    - [125, 524]
+    - [200, 524]
+    - [200, 538]
+  c17:
+    route:
+    - [217, 517]
+    - [217, 538]
+  c18:
+    route:
+    - [8, 695]
+    - [92, 695]
+    - [92, 558]
+    - [163, 558]
+  c19:
+    route:
+    - [210, 581]
+    - [210, 617]
+    - [150, 617]
+    - [150, 645]
+  c20:
+    multi:
+    - [279, 536, 279, 520]
+    - [300, 536, 300, 520]
+    - [343, 536, 343, 520]
+  c21:
+    route:
+    - [281, 584]
+    - [281, 620]
+    - [217, 620]
+    - [217, 667]
+    - [200, 667]
+  c22:
+    route:
+    - [299, 584]
+    - [299, 645]
+  c23:
+    route:
+    - [151, 692]
+    - [151, 758]
+  c24:
+    route:
+    - [384, 536]
+    - [384, 520]
+  c25:
+    route:
+    - [448, 536]
+    - [448, 520]
+  c26:
+    route:
+    - [340, 760]
+    - [340, 584]
+  c27:
+    route:
+    - [568, 742]
+    - [415, 742]
+    - [415, 586]
+  c28:
+    route:
+    - [463, 560]
+    - [512, 560]
+  c29:
+    route:
+    - [484, 560]
+    - [484, 497]
+    - [512, 497]
+  c30: {at: 295}
+  c44: {at: 736}
+  c45: {at: 751}
+  c46: {at: 767}
+  c47: {at: 783}
+  c48:
+    route:
+    - [736, 536]
+    - [736, 519]
+  c49:
+    route:
+    - [736, 583]
+    - [736, 720]
+  c50:
+    route:
+    - [760, 583]
+    - [760, 720]
+  c51:
+    route:
+    - [784, 583]
+    - [784, 797]
+  c52:
+    route:
+    - [736, 767]
+    - [736, 797]
+  c53:
+    route:
+    - [616, 767]
+    - [616, 797]
+  c54: {at: 144}
+  c55: {at: 280}
+  c56: {at: 415}
+  c57:
+    route:
+    - [2, 774]
+    - [56, 774]
+  c58:
+    route:
+    - [56, 804]
+    - [2, 804]
+  c59:
+    route:
+    - [463, 864]
+    - [515, 864]
+    - [515, 831]
+    - [566, 831]
+  c60:
+    route:
+    - [640, 865]
+    - [640, 918]
+  c61:
+    route:
+    - [752, 865]
+    - [752, 918]
+    label_at: [757, 884]      # where the printed label [D|Q]SPI sits (left edge)

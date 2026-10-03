@@ -209,6 +209,10 @@ def check_dynamic(result: dict, spec: dict) -> list[dict]:
         if not hit:
             return None
         si, t = hit
+        by_id = {u["id"]: u for u in snaps[si]["units"]}
+        owner = by_id.get(t.get("owner"))
+        if owner and owner["kind"] == "container":        # the title belongs to its region box: use that box
+            return owner["bbox"]
         cx, cy = (t["bbox"][0] + t["bbox"][2]) / 2, (t["bbox"][1] + t["bbox"][3]) / 2
         tarea = max((t["bbox"][2] - t["bbox"][0]) * (t["bbox"][3] - t["bbox"][1]), 1e-6)
         best = None
@@ -229,44 +233,67 @@ def check_dynamic(result: dict, spec: dict) -> list[dict]:
             issues.append(_issue("conformance_domain", f"domain {d['id']!r}: label {lab!r} is not drawn on or just above a region"))
             continue
         members = set(d.get("contains") or [])
+        external = {b["id"] for b in spec.get("blocks") or [] if b.get("role") == "external"}
         for m in members:
             if m in block_box and not _inside(box, block_box[m]):
                 issues.append(_issue("conformance_domain", f"domain {d['id']!r} ({lab}) does not fully contain block {m!r}"))
         for bid, bb in block_box.items():
-            if bid not in members and _inside(box, bb):
+            if bid not in members and bid not in external and _inside(box, bb):
                 issues.append(_issue("conformance_domain", f"block {bid!r} is drawn inside domain {d['id']!r} but is not a member"))
 
-    # connections
+    # connections: assign wires to spec connections all at once (minimum total distance), so close-together wires
+    # cannot be taken by the wrong connection
+    import numpy as np
+    from scipy.optimize import linear_sum_assignment
     chains = _chains([u for u in rich["units"] if u["kind"] == "connector" and not u.get("transient")])
     used: set[int] = set()
+    slots = []                                              # (connection, copy number)
     for c in spec.get("connections") or []:
         a, b = c["from"].split(".")[0], c["to"].split(".")[0]
         if a not in block_box or b not in block_box:
             issues.append(_issue("conformance_connection", f"connection {c['id']!r} ({a} -> {b}): an end block is not drawn"))
             continue
-        want_dir = c.get("direction", "forward")
-        cands = []
+        for k in range(int(c.get("count", 1))):
+            slots.append(c)
+    BIG = 1e6
+    cost = np.full((len(slots), max(len(chains), 1)), BIG)
+    detail = {}
+    for si, c in enumerate(slots):
+        a, b = c["from"].split(".")[0], c["to"].split(".")[0]
+        want_dir, unconf = c.get("direction", "forward"), bool(c.get("unconfirmed"))
         for i, ch in enumerate(chains):
-            if i in used:
-                continue
             for flip in (False, True):
                 p, q = (ch["s"], ch["e"]) if not flip else (ch["e"], ch["s"])
                 head_a, head_b = (ch["tip_s"], ch["tip_e"]) if not flip else (ch["tip_e"], ch["tip_s"])
-                if _bbox_dist(p, block_box[a]) <= TOL_END and _bbox_dist(q, block_box[b]) <= TOL_END:
-                    right = {"forward": head_b and not head_a, "both": head_a and head_b,
-                             "none": not head_a and not head_b}[want_dir]
-                    cands.append((0 if right else 1, i, head_a, head_b))
-        if not cands:
-            issues.append(_issue("conformance_connection", f"connection {c['id']!r}: no wire is drawn from {a} to {b}"))
+                da, db = _bbox_dist(p, block_box[a]), _bbox_dist(q, block_box[b])
+                if da <= TOL_END and db <= TOL_END:
+                    right = unconf or {"forward": head_b and not head_a, "both": head_a and head_b,
+                                       "none": not head_a and not head_b}[want_dir]
+                    cst = da + db + (0 if right else 0.05)      # wrong arrowheads still match, at a small penalty
+                    if cst < cost[si, i]:
+                        cost[si, i] = cst
+                        detail[(si, i)] = (right, head_a, head_b)
+    if slots and chains:
+        rows, cols = linear_sum_assignment(cost)
+        matched = {r: cc for r, cc in zip(rows, cols) if cost[r, cc] < BIG / 2}
+    else:
+        matched = {}
+    for si, c in enumerate(slots):
+        a, b = c["from"].split(".")[0], c["to"].split(".")[0]
+        if si not in matched:
+            if not any(x is c for x in slots[:si]) or True:
+                issues.append(_issue("conformance_connection", f"connection {c['id']!r}: no wire is drawn from {a} to {b}"))
             continue
-        cands.sort()
-        bad, i, head_a, head_b = cands[0]
+        i = matched[si]
         used.add(i)
-        if bad:
+        right, head_a, head_b = detail[(si, i)]
+        if not right:
+            want_dir = c.get("direction", "forward")
             expect = {"forward": "a head at the end only", "both": "heads at both ends", "none": "no arrowheads"}[want_dir]
             issues.append(_issue("conformance_connection",
                                  f"connection {c['id']!r} ({a} -> {b}): wrong arrowheads; expected {expect}; "
                                  f"drawn: head at {a} = {head_a}, head at {b} = {head_b}"))
+    for c in spec.get("connections") or []:
         if c.get("label") and _norm(labels[f"conn_{c['id']}"]) not in seen:
             issues.append(_issue("conformance_connection", f"connection {c['id']!r}: label {c['label']!r} is not drawn"))
     for i, ch in enumerate(chains):

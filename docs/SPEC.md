@@ -88,7 +88,7 @@ Steps run in order. Anything not mentioned returns to the inactive state at the 
 - `block.PORT` references must name a port declared on that block
 - `bus` must be one of the listed types; `role` and `layout_hint` likewise
 - every sequence step has a non-empty `banner`
-- at most one domain per block
+- a block may be in several domains only if they are nested (`parent:` chain); `scope: full` specs must contain every truth block/connection (items the truth file marks `unclear` must say `unconfirmed: true` and may not be used in the story)
 
 ## What a spec does NOT say (on purpose)
 Coordinates, sizes, colors, font sizes, run times, wire routing, z-order. If a spec needs these to come out right,

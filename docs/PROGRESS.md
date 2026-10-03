@@ -74,3 +74,15 @@ Pending: re-run v3 x3 on Darjeeling once the daily quota resets (`python bench/r
 - **Feedback order stays runtime -> spec conformance -> lint.** Spec errors are structural (missing/extra blocks, labels, domains); fixing layout before the right blocks exist is wasted work.
 - **If logic checks are added later** (signal values, step order, highlight timing), they go AFTER lint, per "aesthetics before logic."
 - **Known limit, kept on purpose: shared/branched bus drawing.** The per-connection check is strict: each spec connection must be its own wire. A bus drawn as one trunk with branches is reported as missing connections. We may want to allow this later; not now.
+
+## M1.5 pivot: whole-diagram, code-drawn pipeline (v4) (2026-10-03)
+Goal (user): give a reference diagram + a short story, get an animation that is overlap-free, text-clean and a 1:1 recreation of the picture (scale/colors may differ). More diagrams tried -> better RAG examples later.
+Decisions (user): draw from the picture's own positions with code; the AI only writes the story. Unclear items are neither dropped nor drawn as sure lines: they are drawn amber-dashed ("unconfirmed") and listed in the report with a zoomed reference crop for the user to confirm.
+Built:
+- bench/truth/opentitan_darjeeling.layout.yaml: pixel boxes (detected from the image fills) + hand-read routes. `ipmotion/diagram.py` draws regions, blocks, wires, legend, step panel from truth+layout; `ipmotion/player.py` plays a story (highlight/activate/packets; response packets orange, reversed); `ipmotion/fullspec.py` builds the full spec from truth + a story (bench/stories/*.yaml); validator knows `scope: full`, nested domains, `unconfirmed`.
+- `ipmotion/fidelity.py` (blocks / regions / wires / extras / left-right-above-below order / unconfirmed) and `bench/run_full.py` (writes runs/*_v4/final.json; no AI, no quota).
+- Dense-diagram lint limits ([lint_full] in style.toml): text 6.5/8 px, gap 0.05; wires may end on a region border or a free label; packets/dashes handled in snapshots; conformance now assigns wires globally (min total distance).
+- Library bug fixed: IPBlock title rotated 180 deg when the block was < 0.2 tall.
+Result (Darjeeling, story "Ibex reads from the UART / I2C"): 49/49 blocks, 4/4 regions, 53/53 sure wires, 0 extras, 100% order agreement, 12 unconfirmed (10 wires, 2 blocks), lint errors 0, spec errors 0. CAVEAT: these compare the drawing with the hand-written notes of the picture, not with the picture; the user judges by eye (report shows reference beside render).
+Known limits: three labels are as small as in the reference (warnings, not errors); text at the 25% keyframe can be caught mid-change; the notes (truth+layout) are hand-made for Darjeeling only; reading a new image automatically (vision model) and the story-from-text step (LLM) are not built; other diagrams (Earlgrey, Peppermint) have truth but no layout file yet.
+Next: user reviews the report (reference vs render, and the 12 unconfirmed items); then layout files for Earlgrey/Peppermint to test the same engine on different chips; later the LLM story step and vision transcription when quota allows.
