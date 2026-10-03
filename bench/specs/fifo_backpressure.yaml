@@ -1,0 +1,72 @@
+# MEDIUM: three blocks plus a FIFO whose state changes, flow-control wires going backwards.
+title: "FIFO Backpressure"
+layout_hint: left_to_right
+description: >
+  A fast producer writes into a 4-deep FIFO drained by a slower consumer. When the FIFO fills it asserts
+  FULL, which deasserts the producer's ready (backpressure) and stalls it until the consumer pops an entry.
+
+blocks:
+  - id: producer
+    label: "Producer"
+    role: master
+    ports: [WR_EN, FULL]
+  - id: fifo
+    label: "FIFO (depth 4)"
+    role: fifo
+    ports: [PUSH, POP, FULL, EMPTY]
+  - id: consumer
+    label: "Consumer"
+    role: slave
+    ports: [RD_EN, EMPTY]
+
+connections:
+  - id: push
+    from: producer.WR_EN
+    to: fifo.PUSH
+    bus: data
+    label: "push data"
+  - id: pop
+    from: fifo.POP
+    to: consumer.RD_EN
+    bus: data
+    label: "pop data"
+  - id: full
+    from: fifo.FULL
+    to: producer.FULL
+    bus: control
+    label: "FULL (backpressure)"
+  - id: empty
+    from: fifo.EMPTY
+    to: consumer.EMPTY
+    bus: control
+    label: "EMPTY"
+
+sequence:
+  - banner: "Cycle 1: FIFO is empty. Producer starts pushing"
+    highlight: [producer]
+    activate: [push]
+    state: [{block: fifo, value: "A - - -"}]
+  - banner: "Cycle 2: Producer keeps pushing; consumer is idle"
+    highlight: [producer, fifo]
+    activate: [push]
+    packets: [{conn: push, label: "B"}]
+    state: [{block: fifo, value: "A B - -"}]
+  - banner: "Cycle 3: FIFO reaches 4/4 entries and asserts FULL"
+    highlight: [fifo]
+    activate: [push, full]
+    state: [{block: fifo, value: "A B C D"}]
+  - banner: "Cycle 4: FULL deasserts producer ready. Producer stalls"
+    highlight: [producer]
+    activate: [full]
+    state: [{block: fifo, value: "A B C D"}]
+  - banner: "Cycle 5: Consumer pops entry A. FULL clears"
+    highlight: [consumer, fifo]
+    activate: [pop]
+    packets: [{conn: pop, label: "A"}]
+    state: [{block: fifo, value: "B C D -"}]
+  - banner: "Cycle 6: Producer resumes pushing into the freed slot"
+    highlight: [producer]
+    activate: [push]
+    packets: [{conn: push, label: "E"}]
+    state: [{block: fifo, value: "B C D E"}]
+    hold: 1.5

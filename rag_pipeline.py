@@ -11,7 +11,7 @@ import os
 import chromadb
 
 # ── Config ──────────────────────────────────────────────────
-CHROMA_DIR = os.path.join(os.path.dirname(__file__), ".chroma_db")
+CHROMA_DIR = os.environ.get("IPMOTION_CHROMA_DIR") or os.path.join(os.path.dirname(__file__), ".chroma_db")
 COLLECTION_NAME = "ipmotion_knowledge"
 TOP_K = 8  # Number of chunks to retrieve
 

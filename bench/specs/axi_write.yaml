@@ -1,0 +1,55 @@
+# SIMPLE: two blocks, three channels, linear story.
+title: "AXI4 Write Transaction"
+layout_hint: left_to_right
+description: >
+  A master writes one word to a slave using the AXI4 write address (AW), write data (W) and
+  write response (B) channels, each with a valid/ready handshake.
+
+blocks:
+  - id: master
+    label: "AXI Master"
+    role: master
+  - id: slave
+    label: "AXI Slave"
+    role: slave
+
+connections:
+  - id: aw
+    from: master
+    to: slave
+    bus: address
+    label: "Write Address (AW)"
+  - id: w
+    from: master
+    to: slave
+    bus: data
+    label: "Write Data (W)"
+  - id: b
+    from: slave
+    to: master
+    bus: response
+    label: "Write Response (B)"
+
+sequence:
+  - banner: "Cycle 1: Master asserts AWVALID with AWADDR=0x1000"
+    highlight: [master]
+    activate: [aw]
+    packets: [{conn: aw, label: "AWADDR=0x1000"}]
+  - banner: "Cycle 2: Slave asserts AWREADY. Address handshake completes"
+    highlight: [slave]
+    activate: [aw]
+  - banner: "Cycle 3: Master drives WDATA=0xCAFE with WVALID, WLAST=1"
+    highlight: [master]
+    activate: [w]
+    packets: [{conn: w, label: "WDATA=0xCAFE"}]
+  - banner: "Cycle 4: Slave asserts WREADY. Data handshake completes"
+    highlight: [slave]
+    activate: [w]
+  - banner: "Cycle 5: Slave returns BRESP=OKAY with BVALID"
+    highlight: [slave]
+    activate: [b]
+    packets: [{conn: b, label: "BRESP=OKAY"}]
+  - banner: "Cycle 6: Master asserts BREADY. Write transaction complete"
+    highlight: [master]
+    activate: [b]
+    hold: 1.5

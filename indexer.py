@@ -14,8 +14,10 @@ import sys
 import chromadb
 from chromadb.config import Settings
 
+from ipmotion.leakguard import assert_no_truth_leak, is_denied
+
 # ── Config ──────────────────────────────────────────────────
-CHROMA_DIR = os.path.join(os.path.dirname(__file__), ".chroma_db")
+CHROMA_DIR = os.environ.get("IPMOTION_CHROMA_DIR") or os.path.join(os.path.dirname(__file__), ".chroma_db")
 COLLECTION_NAME = "ipmotion_knowledge"
 
 LIB_PATH = os.path.join(os.path.dirname(__file__), "ipmotion_lib.py")
@@ -98,6 +100,15 @@ def chunk_library(lib_path):
     return chunks
 
 
+def indexable_examples():
+    """Basenames that gold_examples/MANIFEST.toml marks status = "indexable". Anything not listed is skipped."""
+    import tomllib
+    path = os.path.join(os.path.dirname(__file__), "gold_examples", "MANIFEST.toml")
+    with open(path, "rb") as fh:
+        files = tomllib.load(fh).get("files", {})
+    return {name for name, meta in files.items() if meta.get("status") == "indexable"}
+
+
 def chunk_example_scripts():
     """
     Load gold example scripts as full-file chunks.
@@ -107,6 +118,7 @@ def chunk_example_scripts():
 
     chunks = []
     seen = set()
+    allowed = indexable_examples()
 
     for directory in EXAMPLE_DIRS:
         for pattern in EXAMPLE_PATTERNS:
@@ -114,8 +126,12 @@ def chunk_example_scripts():
                 if filepath in seen:
                     continue
                 seen.add(filepath)
+                if is_denied(filepath):      # truth files / source diagrams are never indexed
+                    continue
 
                 basename = os.path.basename(filepath)
+                if basename not in allowed:   # MANIFEST.toml is the single source of truth for indexing
+                    continue
                 try:
                     with open(filepath, "r", encoding="utf-8") as f:
                         content = f.read()
@@ -306,6 +322,9 @@ def run_indexer(reset=False):
     api_chunks = chunk_manim_api_basics()
     all_chunks.extend(api_chunks)
     print(f"[indexer] Added {len(api_chunks)} Manim API reference chunks")
+
+    # Leakage protection: refuse to index anything derived from the ground-truth diagrams
+    assert_no_truth_leak(all_chunks, where="indexer input")
 
     # Upsert into ChromaDB
     if all_chunks:

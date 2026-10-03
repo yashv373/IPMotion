@@ -1,0 +1,128 @@
+# TRUTH FILE: transcribed from opentitan_archs/top_earlgrey_block_diagram.png (1069x690 px) and nothing else.
+# Never indexed, never put in a prompt (see CLAUDE.md). Specs may reference it via `source:`.
+# Conventions identical to opentitan_darjeeling.yaml:
+#   from -> to = arrow TAIL -> HEAD as drawn; heads: both = head at each end; heads: none = no head visible
+#   (directed: false). line: hollow_block = white hollow block arrow (all bus-like links here);
+#   thin = thin black line with small heads.
+#   markers = small colored squares inside a block; each records the legend entry its COLOR matches
+#   (legend_match). No meaning is asserted for them.  `unclear` marks anything the image does not settle.
+
+source_image: opentitan_archs/top_earlgrey_block_diagram.png
+decorations: ["coffee-cup icon and OpenTitan chip icon, top-right corner of chip_earlgrey_asic (no text)"]
+
+legend:                         # exactly the 6 entries printed bottom-left
+  - {swatch: light blue fill,  label: "~150 MHz (target)"}
+  - {swatch: medium blue fill, label: "96 MHz"}
+  - {swatch: pink fill,        label: "48 MHz"}
+  - {swatch: light green fill, label: "24 MHz"}
+  - {swatch: peach fill,       label: "200 kHz"}
+  - {swatch: gray fill,        label: "Logic only"}
+legend_unclear:
+  - "Small colored squares inside blocks use the same colors as legend swatches (reading, not printed)."
+  - "The diagram does not say what the two X-shaped line patterns inside the TL-UL crossbars mean (drawn as part of the crossbar symbols)."
+
+regions:
+  - {id: chip,   label: "chip_earlgrey_asic",  style: "black outline, white fill", parent: null}
+  - {id: top,    label: "top_earlgrey 2.0.0",  style: "light gray fill; 'top_earlgrey' in bold monospace, '2.0.0' regular", parent: chip}
+  - {id: pd_main, label: "earlgrey_pd_main",   style: "gray fill", parent: top}
+  - {id: pd_aon,  label: "earlgrey_pd_aon",    subtitle: "Always-On Power Domain (printed in red)", style: "gray fill", parent: top}
+
+blocks:
+  # ---- earlgrey_pd_main
+  - {id: ibex_core, label: "Ibex Core (RV32{I,CHERIoT} MCBZcbZcmp)", region: pd_main, fill_legend: "~150 MHz (target)",
+     note: "A darker blue block labelled 'DUAL LOCKSTEP' is drawn behind/below it as a shadow copy."}
+  - {id: interrupt_controller, label: "Interrupt Controller", region: pd_main, fill_legend: "~150 MHz (target)"}
+  - {id: rom, label: "ROM", region: pd_main, fill_legend: "~150 MHz (target)"}
+  - {id: secondary_sram, label: "Secondary SRAM", region: pd_main, fill_legend: "~150 MHz (target)"}
+  - {id: main_sram, label: "Main SRAM", region: pd_main, fill_legend: "~150 MHz (target)"}
+  - {id: tlul_crossbar, label: "TL-UL Crossbar", region: pd_main, fill_legend: "~150 MHz (target)", note: "wide block with an X-shaped line pattern"}
+  - {id: key_manager_dpe, label: "Key Manager DPE", region: pd_main, fill_legend: "~150 MHz (target)"}
+  - {id: kmac, label: "KMAC", region: pd_main, fill_legend: "~150 MHz (target)"}
+  - {id: entropy_complex, label: "Entropy Complex (Entropy Source, CSRNG, EDNs)", region: pd_main, fill_legend: "~150 MHz (target)",
+     note: "drawn as three stacked boxes; small second line '(Entropy Source, CSRNG, EDNs)'"}
+  - {id: spi_host_0, label: "SPI Host 0", region: pd_main, fill_legend: "96 MHz"}
+  - {id: otbn, label: "OTBN", region: pd_main, fill_legend: "~150 MHz (target)"}
+  - {id: hmac, label: "HMAC", region: pd_main, fill_legend: "~150 MHz (target)"}
+  - {id: debug_module, label: "Debug Module", region: pd_main, fill_legend: "~150 MHz (target)"}
+  - {id: spi_host_1, label: "SPI Host 1", region: pd_main, fill_legend: "96 MHz"}
+  - {id: aes, label: "AES", region: pd_main, fill_legend: "~150 MHz (target)"}
+  - {id: rram, label: "RRAM", region: pd_main, fill_legend: "~150 MHz (target)"}
+  - {id: i3c_controller_target, label: "2x I3C Controller + Target", region: pd_main, fill_legend: "96 MHz"}
+  - {id: usb_device, label: "USB 2.0 Full-Speed Device", region: pd_main, fill_legend: "48 MHz", markers: [{color: peach, legend_match: "200 kHz"}]}
+  - {id: otp_controller, label: "OTP (Fuse) Controller (via RRAM)", region: pd_main, fill_legend: "24 MHz"}
+  - {id: life_cycle_controller, label: "Life Cycle Controller", region: pd_main, fill_legend: "24 MHz"}
+  - {id: gpio, label: "GPIO (32 I/Os)", region: pd_main, fill_legend: "24 MHz"}
+  - {id: spi_device, label: "SPI Device", region: pd_main, fill_legend: "24 MHz", markers: [{color: blue, legend_match: "96 MHz"}]}
+  - {id: uart_4x, label: "4x UART", region: pd_main, fill_legend: "24 MHz"}
+  - {id: i2c_3x, label: "3x I2C (Host + Device)", region: pd_main, fill_legend: "24 MHz"}
+  - {id: peri_tlul_crossbar, label: "TL-UL Cross bar", region: pd_main, fill_legend: "24 MHz",
+     note: "tall block, printed on three lines TL-UL / Cross / bar, with an X-shaped line pattern"}
+  - {id: alert_handler, label: "Alert Handler", region: pd_main, fill_legend: "24 MHz"}
+  - {id: timers, label: "Timers", region: pd_main, fill_legend: "24 MHz"}
+  - {id: clk_rst_managers_main, label: "Clk/Rst Managers", region: pd_main, fill_legend: "24 MHz"}
+  - {id: pinmux_main, label: "Pinmux", region: pd_main, fill_legend: "24 MHz"}
+  - {id: analog_sensor_top_main, label: "Analog Sensor Top", region: pd_main, fill_legend: "24 MHz"}
+  # ---- earlgrey_pd_aon
+  - {id: retention_sram, label: "Retention SRAM", region: pd_aon, fill_legend: "24 MHz"}
+  - {id: sysrst_controller, label: "Sysrst Controller", region: pd_aon, fill_legend: "24 MHz", markers: [{color: peach, legend_match: "200 kHz"}]}
+  - {id: sensor_control, label: "Sensor Control", region: pd_aon, fill_legend: "24 MHz", markers: [{color: peach, legend_match: "200 kHz"}]}
+  - {id: aon_timers, label: "AON Timers", region: pd_aon, fill_legend: "24 MHz", markers: [{color: peach, legend_match: "200 kHz"}]}
+  - {id: adc_controller, label: "ADC Controller", region: pd_aon, fill_legend: "24 MHz", markers: [{color: peach, legend_match: "200 kHz"}]}
+  - {id: power_manager, label: "Power Manager", region: pd_aon, fill_legend: "24 MHz", markers: [{color: peach, legend_match: "200 kHz"}]}
+  - {id: clk_rst_managers_aon, label: "Clk/Rst Managers", region: pd_aon, fill_legend: "24 MHz", markers: [{color: peach, legend_match: "200 kHz"}]}
+  - {id: pinmux_aon, label: "Pinmux", region: pd_aon, fill_legend: "24 MHz", markers: [{color: peach, legend_match: "200 kHz"}]}
+  - {id: analog_sensor_top_aon, label: "Analog Sensor Top", region: pd_aon, fill_legend: "24 MHz", markers: [{color: peach, legend_match: "200 kHz"}, {color: pink, legend_match: "48 MHz"}]}
+  # ---- inside chip_earlgrey_asic, outside top_earlgrey
+  - {id: padring, label: "Padring (only wires and pad instances)", region: chip, fill_legend: "Logic only"}
+
+externals: []                   # nothing is drawn outside the chip_earlgrey_asic outline
+
+connections:
+  # ---- Ibex, memories, main crossbar (hollow block arrows)
+  - {id: c01, from: ibex_core, to: tlul_crossbar, line: hollow_block, heads: both}
+  - {id: c02, from: secondary_sram, to: interrupt_controller, line: hollow_block, heads: to}
+  - {id: c03, from: main_sram, to: rom, line: hollow_block, heads: to}
+  - {id: c04, from: secondary_sram, to: tlul_crossbar, line: hollow_block, heads: to}
+  - {id: c05, from: main_sram, to: tlul_crossbar, line: hollow_block, heads: to}
+  - {id: c06, from: key_manager_dpe, to: tlul_crossbar, line: hollow_block, heads: to}
+  - {id: c07, from: kmac, to: tlul_crossbar, line: hollow_block, heads: to}
+  - {id: c08, from: entropy_complex, to: tlul_crossbar, line: hollow_block, heads: to}
+  - {id: c09, from: spi_host_0, to: tlul_crossbar, line: hollow_block, heads: to}
+  # ---- stems between stacked pairs (no heads) and arrows to the bottom row
+  - {id: c10, from: key_manager_dpe, to: otbn, line: hollow_block, heads: none, directed: false}
+  - {id: c11, from: kmac, to: hmac, line: hollow_block, heads: none, directed: false}
+  - {id: c12, from: entropy_complex, to: debug_module, line: hollow_block, heads: none, directed: false,
+     unclear: "Short stem, partly hidden behind the stacked Entropy Complex boxes; its end points are not clearly visible."}
+  - {id: c13, from: spi_host_0, to: spi_host_1, line: hollow_block, heads: none, directed: false}
+  - {id: c14, from: otbn, to: aes, line: hollow_block, heads: to}
+  - {id: c15, from: hmac, to: rram, line: hollow_block, heads: to}
+  - {id: c16, from: debug_module, to: i3c_controller_target, line: hollow_block, heads: to}
+  - {id: c17, from: spi_host_1, to: usb_device, line: hollow_block, heads: to}
+  # ---- main crossbar <-> peripheral crossbar
+  - {id: c18, from: tlul_crossbar, to: peri_tlul_crossbar, line: hollow_block, heads: both}
+  # ---- peripheral crossbar <-> its targets (heads at both ends)
+  - {id: c19, from: peri_tlul_crossbar, to: otp_controller, line: hollow_block, heads: both}
+  - {id: c20, from: peri_tlul_crossbar, to: life_cycle_controller, line: hollow_block, heads: both}
+  - {id: c21, from: peri_tlul_crossbar, to: gpio, line: hollow_block, heads: both}
+  - {id: c22, from: peri_tlul_crossbar, to: spi_device, line: hollow_block, heads: both}
+  - {id: c23, from: peri_tlul_crossbar, to: uart_4x, line: hollow_block, heads: both}
+  - {id: c24, from: peri_tlul_crossbar, to: i2c_3x, line: hollow_block, heads: both}
+  - {id: c25, from: peri_tlul_crossbar, to: alert_handler, line: hollow_block, heads: both}
+  - {id: c26, from: peri_tlul_crossbar, to: timers, line: hollow_block, heads: both}
+  - {id: c27, from: peri_tlul_crossbar, to: clk_rst_managers_main, line: hollow_block, heads: both}
+  - {id: c28, from: peri_tlul_crossbar, to: pinmux_main, line: hollow_block, heads: both}
+  - {id: c29, from: peri_tlul_crossbar, to: analog_sensor_top_main, line: hollow_block, heads: both}
+  # ---- AON blocks into the peripheral crossbar (head at the crossbar end only)
+  - {id: c30, from: retention_sram, to: peri_tlul_crossbar, line: hollow_block, heads: to}
+  - {id: c31, from: sensor_control, to: peri_tlul_crossbar, line: hollow_block, heads: to}
+  - {id: c32, from: adc_controller, to: peri_tlul_crossbar, line: hollow_block, heads: to}
+  # ---- inside earlgrey_pd_aon
+  - {id: c33, from: retention_sram, to: sysrst_controller, line: hollow_block, heads: to}
+  - {id: c34, from: sensor_control, to: aon_timers, line: hollow_block, heads: to}
+  - {id: c35, from: adc_controller, to: power_manager, line: hollow_block, heads: to}
+  # ---- thin lines across the domain boundary and to the padring
+  - {id: c36, from: clk_rst_managers_main, to: clk_rst_managers_aon, line: thin, heads: both}
+  - {id: c37, from: pinmux_main, to: pinmux_aon, line: thin, heads: both}
+  - {id: c38, from: analog_sensor_top_main, to: analog_sensor_top_aon, line: thin, heads: both}
+  - {id: c39, from: pinmux_aon, to: padring, line: thin, heads: to, note: "leaves the right edge of Pinmux, turns down"}
+  - {id: c40, from: analog_sensor_top_aon, to: padring, line: thin, heads: to, note: "leaves the bottom edge, straight down"}

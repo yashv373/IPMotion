@@ -1,0 +1,106 @@
+# TRUTH FILE: transcribed from opentitan_archs/peppermint.png (951x548 px) and nothing else.
+# Never indexed, never put in a prompt (see CLAUDE.md). Specs may reference it via `source:`.
+# Conventions identical to opentitan_darjeeling.yaml: from -> to = arrow TAIL -> HEAD as drawn;
+# heads: both = head at each end; heads: none = no head visible (directed: false);
+# line: thick = thick gray arrow/bar, thin = thin black line with a small head.
+# THIS DIAGRAM HAS NO LEGEND: fill colors are recorded as drawn (`fill`), with no frequency or meaning.
+
+source_image: opentitan_archs/peppermint.png
+diagram_title: "OpenTitan Peppermint – Integrated Root of Trust (iRoT) and Secure Enclave – top_peppermint"
+title_note: "'Peppermint' is printed in italics and 'top_peppermint' in monospace."
+decorations: ["OpenTitan chip icon, top-right corner of the outer region (no text)"]
+
+legend: []
+legend_unclear:
+  - "There is no legend. The two greens (light green for the main domain, darker green for the AON domain), the dashed outline on Retention SRAM, and the unlabeled symbol are not explained."
+
+regions:
+  - {id: outer,    label: "OpenTitan Peppermint – Integrated Root of Trust (iRoT) and Secure Enclave – top_peppermint", style: "light gray fill", parent: null}
+  - {id: main,     label: "Main power and clock domain", style: "gray fill", parent: outer}
+  - {id: aon,      label: "Always-On (AON) power and clock domain", style: "gray fill; label printed on two lines", parent: outer}
+
+blocks:
+  # ---- Main power and clock domain (all light green)
+  - {id: ibex_core, label: "Ibex Core (RV32IMCB)", region: main, fill: light green,
+     note: "A darker green block labelled 'DUAL LOCKSTEP' is drawn behind/below it as a shadow copy."}
+  - {id: interrupt_controller, label: "Interrupt Controller", region: main, fill: light green}
+  - {id: rom, label: "ROM", region: main, fill: light green}
+  - {id: otp_fuse_controller, label: "OTP (Fuse) Controller", region: main, fill: light green}
+  - {id: main_sram, label: "Main SRAM", region: main, fill: light green}
+  - {id: main_tlul_crossbar, label: "Main TL-UL Crossbar", region: main, fill: light green, note: "printed on two lines: Main / TL-UL Crossbar"}
+  - {id: otbn, label: "OTBN", region: main, fill: light green}
+  - {id: kmac, label: "KMAC", region: main, fill: light green}
+  - {id: hmac, label: "HMAC", region: main, fill: light green}
+  - {id: key_manager_dpe, label: "Key Manager DPE", region: main, fill: light green}
+  - {id: entropy_source_csrng_edn, label: "Entropy Source, CSRNG, EDN", region: main, fill: light green}
+  - {id: aes, label: "AES", region: main, fill: light green}
+  - {id: timers, label: "Timers", region: main, fill: light green}
+  - {id: dma, label: "DMA", region: main, fill: light green}
+  - {id: mailboxes, label: "Mailboxes (inbound & outbound)", region: main, fill: light green, note: "second line '(inbound & outbound)' in smaller type"}
+  - {id: debug_module, label: "Debug Module", region: main, fill: light green}
+  - {id: life_cycle_controller, label: "Life Cycle Controller", region: main, fill: light green}
+  # ---- Always-On (AON) power and clock domain (all darker green)
+  - {id: aon_tlul_crossbar, label: "AON TL-UL Cross bar", region: aon, fill: dark green, note: "tall block, printed on four lines: AON / TL-UL / Cross / bar"}
+  - {id: alert_handler, label: "Alert Handler", region: aon, fill: dark green}
+  - {id: power_manager, label: "Power Manager", region: aon, fill: dark green}
+  - {id: reset_manager, label: "Reset Manager", region: aon, fill: dark green}
+  - {id: clock_manager, label: "Clock Manager", region: aon, fill: dark green}
+  - {id: retention_sram, label: "Retention SRAM", region: aon, fill: dark green, attributes: [dashed_outline]}
+  - {id: unlabeled_symbol, label: null, region: aon, fill: dark green,
+     note: "small square with a white upward-pointing triangle; no text",
+     unclear: "Unlabeled symbol; its function is not stated."}
+
+# Items outside the outer region (text labels at the diagram edge; arrows cross the boundary)
+externals:
+  - {id: memory_bus_egress, label: "Memory bus egress for Ibex and DMA"}
+  - {id: noise_source_bits, label: "Noise source bits"}
+  - {id: memory_bus_ingress, label: "Memory bus ingress to Mailbox"}
+  - {id: outbound_message_irq, label: "Outbound message IRQ"}
+  - {id: debug_module_interface, label: "Debug module interface (DMI)"}
+  - {id: alerts_from_soc, label: "Alerts from SoC"}
+  - {id: power_handshake, label: "Power Handshake"}
+  - {id: soc_cpu_reset, label: "SoC CPU Reset"}
+  - {id: life_cycle_function_control, label: "Life Cycle Function Control"}
+
+connections:
+  # ---- Ibex, memories, main crossbar
+  - {id: c01, from: ibex_core, to: main_tlul_crossbar, line: thick, heads: to, note: "starts below the 'DUAL LOCKSTEP' tag"}
+  - {id: c02, from: main_tlul_crossbar, to: otp_fuse_controller, line: thick, heads: none, directed: false}
+  - {id: c03, from: otp_fuse_controller, to: interrupt_controller, line: thick, heads: to}
+  - {id: c04, from: main_tlul_crossbar, to: main_sram, line: thick, heads: none, directed: false}
+  - {id: c05, from: main_sram, to: rom, line: thick, heads: to}
+  - {id: c06, from: main_tlul_crossbar, to: memory_bus_egress, line: thick, heads: to, note: "head points left at the diagram edge"}
+  - {id: c07, from: main_tlul_crossbar, to: aon_tlul_crossbar, line: thick, heads: to}
+  # ---- crossbar to the middle rows, stems and arrows to the bottom rows
+  - {id: c08, from: main_tlul_crossbar, to: otbn, line: thick, heads: none, directed: false}
+  - {id: c09, from: main_tlul_crossbar, to: kmac, line: thick, heads: none, directed: false}
+  - {id: c10, from: main_tlul_crossbar, to: hmac, line: thick, heads: none, directed: false}
+  - {id: c11, from: main_tlul_crossbar, to: key_manager_dpe, line: thick, heads: none, directed: false}
+  - {id: c12, from: otbn, to: entropy_source_csrng_edn, line: thick, heads: none, directed: false}
+  - {id: c13, from: kmac, to: entropy_source_csrng_edn, line: thick, heads: none, directed: false}
+  - {id: c14, from: hmac, to: aes, line: thick, heads: none, directed: false}
+  - {id: c15, from: key_manager_dpe, to: timers, line: thick, heads: none, directed: false}
+  - {id: c16, from: entropy_source_csrng_edn, to: dma, line: thick, heads: to}
+  - {id: c17, from: entropy_source_csrng_edn, to: mailboxes, line: thick, heads: to}
+  - {id: c18, from: aes, to: debug_module, line: thick, heads: to}
+  - {id: c19, from: timers, to: life_cycle_controller, line: thick, heads: to}
+  - {id: c20, from: noise_source_bits, to: entropy_source_csrng_edn, line: thin, heads: to}
+  # ---- externals around the bottom
+  - {id: c21, from: memory_bus_ingress, to: mailboxes, line: thick, heads: to, note: "head at the bottom edge of Mailboxes"}
+  - {id: c22, from: mailboxes, to: outbound_message_irq, line: thin, heads: to, note: "head points down at the diagram edge"}
+  - {id: c23, from: debug_module_interface, to: debug_module, line: thick, heads: to, note: "one thick line from the bottom edge that branches to two blocks"}
+  - {id: c24, from: debug_module_interface, to: life_cycle_controller, line: thick, heads: to, note: "other branch of the same line"}
+  # ---- Life Cycle Controller out through the unlabeled symbol
+  - {id: c25, from: life_cycle_controller, to: unlabeled_symbol, line: thin, heads: to,
+     unclear: "Thin line leaves the Life Cycle Controller and runs to the unlabeled symbol; it may be one line passing behind the symbol and continuing to the right edge (c26)."}
+  - {id: c26, from: unlabeled_symbol, to: life_cycle_function_control, line: thin, heads: to,
+     unclear: "See c25."}
+  # ---- AON crossbar to its targets (head at the target) and AON externals
+  - {id: c27, from: aon_tlul_crossbar, to: alert_handler, line: thick, heads: to}
+  - {id: c28, from: aon_tlul_crossbar, to: power_manager, line: thick, heads: to}
+  - {id: c29, from: aon_tlul_crossbar, to: reset_manager, line: thick, heads: to}
+  - {id: c30, from: aon_tlul_crossbar, to: clock_manager, line: thick, heads: to}
+  - {id: c31, from: aon_tlul_crossbar, to: retention_sram, line: thick, heads: to}
+  - {id: c32, from: alerts_from_soc, to: alert_handler, line: thin, heads: to}
+  - {id: c33, from: power_manager, to: power_handshake, line: thin, heads: both}
+  - {id: c34, from: reset_manager, to: soc_cpu_reset, line: thin, heads: to}

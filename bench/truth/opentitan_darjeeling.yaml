@@ -1,0 +1,187 @@
+# TRUTH FILE: transcribed from opentitan_archs/top_darjeeling_block_diagram.png (862x984 px) and nothing else.
+# Never indexed, never put in a prompt (see CLAUDE.md). Specs may reference it via `source:`.
+#
+# Conventions
+#   label        exactly as printed (printed line breaks joined with a space)
+#   from -> to   arrow TAIL -> arrow HEAD, as drawn.  heads: both  = head at each end.
+#   heads: none  = no arrowhead visible; direction is NOT known (`directed: false`).
+#   line         thick  = thick gray arrow/bar;  thin = thin gray line;  dashed_thin = dashed thin line;
+#                dashed_block = hollow gray block arrow with dashed outline
+#   markers      small colored squares inside a block; each records the legend entry its COLOR matches
+#                (legend_match). No meaning is asserted for them.
+#   unclear      anything the image does not settle. Nothing here was guessed.
+# Resolution note: the image is small, so a second arrowhead hidden at the Peri crossbar end of
+#   the peripheral arrows cannot be fully excluded; none is visible.
+
+source_image: opentitan_archs/top_darjeeling_block_diagram.png
+diagram_title: null            # no separate title; the outermost region label is the closest thing
+decorations: ["OpenTitan chip icon, top-right corner of the wrapper (no text)"]
+
+legend:                         # exactly the 6 entries printed bottom-left
+  - {swatch: cyan fill,        label: "~1 Ghz"}
+  - {swatch: purple fill,      label: "~250 MHz"}
+  - {swatch: orange fill,      label: "62.5 MHz"}
+  - {swatch: gray fill,        label: "Logic Only"}
+  - {swatch: dashed outline,   label: "Not fully implemented yet"}
+  - {swatch: blue outline,     label: "Newly (in rev2) developed IPs"}
+legend_unclear:
+  - "Small colored squares inside blocks are not explained in the legend; they are recorded only as markers with the legend entry their color matches."
+  - "The meaning of thick vs thin lines and of the hollow dashed block arrows is not in the legend."
+
+regions:
+  - {id: wrapper, label: "SoC Integration Wrapper (chip_darjeeling_*)", style: "black outline, white fill", parent: null}
+  - {id: ip,      label: "OpenTitan Integrated IP (top_darjeeling)",    style: "light gray fill",          parent: wrapper}
+  - {id: hi,      label: "Hi-Speed Domain",                              style: "gray fill",                parent: ip}
+  - {id: lo,      label: "Low-Speed Domain",                             style: "gray fill",                parent: ip}
+
+# `fill_legend` = the legend label whose swatch matches the block fill. `markers` = small colored squares drawn inside the block.
+blocks:
+  # ---- Hi-Speed Domain
+  - {id: ibex_core, label: "Ibex Core (RV32IMCB)", region: hi, fill_legend: "~1 Ghz",
+     note: "A darker block labelled 'DUAL LOCKSTEP' is drawn behind/below it as a shadow copy."}
+  - {id: interrupt_controller, label: "Interrupt Controller", region: hi, fill_legend: "~1 Ghz"}
+  - {id: rom_partitions, label: "ROM Partitions 1/2", region: hi, fill_legend: "~1 Ghz"}
+  - {id: main_sram, label: "Main SRAM", region: hi, fill_legend: "~1 Ghz"}
+  - {id: shared_mailbox_sram, label: "Shared Mailbox SRAM", region: hi, fill_legend: "~1 Ghz"}
+  - {id: main_tlul_crossbar, label: "Main TL-UL Crossbar", region: hi, fill_legend: "~1 Ghz"}
+  - {id: otbn, label: "OTBN", region: hi, fill_legend: "~1 Ghz"}
+  - {id: kmac, label: "KMAC", region: hi, fill_legend: "~1 Ghz"}
+  - {id: edn_0_1, label: "EDN 0 / 1", region: hi, fill_legend: "~1 Ghz"}
+  - {id: csrng, label: "CSRNG", region: hi, fill_legend: "~1 Ghz"}
+  - {id: key_manager_dpe, label: "Key Manager DPE", region: hi, fill_legend: "~1 Ghz"}
+  - {id: hmac, label: "HMAC", region: hi, fill_legend: "~1 Ghz"}
+  - {id: aes, label: "AES", region: hi, fill_legend: "~1 Ghz"}
+  - {id: debug_module, label: "Debug Module", region: hi, fill_legend: "~1 Ghz"}
+  - {id: dma, label: "DMA", region: hi, fill_legend: "~1 Ghz"}
+  - {id: soc_proxy, label: "SoC Proxy", region: hi, fill_legend: "~1 Ghz",
+     contains: [base_addr_translation, "unlabeled trapezoid (mux-like) symbol above it"],
+     unclear: "The trapezoid symbol has no label; its function is not stated."}
+  - {id: base_addr_translation, label: "Base Addr Translation", region: hi, inside: soc_proxy, fill_legend: "~1 Ghz",
+     attributes: [blue_outline]}
+  - {id: nine_x_mailboxes, label: "9 x Mailboxes", region: hi, fill_legend: "~1 Ghz"}
+  - {id: jtag_mailbox, label: "JTAG Mailbox", region: hi, fill_legend: "~1 Ghz"}
+  - {id: mbx_tlul_crossbar, label: "Mbx TL-UL Crossbar", region: hi, fill_legend: "~1 Ghz"}
+  - {id: dbg_tlul_crossbar, label: "Dbg TL-UL Crossbar", region: hi, fill_legend: "~1 Ghz", attributes: [blue_outline]}
+  # ---- inside Integrated IP, outside both domains
+  - {id: access_ctrl_range_check, label: "Access Ctrl Range Check", region: ip, fill_legend: "~1 Ghz", attributes: [blue_outline]}
+  - {id: racl_control, label: "RACL Control", region: ip, fill_legend: "~1 Ghz", attributes: [blue_outline]}
+  # ---- Low-Speed Domain
+  - {id: timers, label: "Timers", region: lo, fill_legend: "~250 MHz", markers: [{color: orange, legend_match: "62.5 MHz"}]}
+  - {id: retention_sram, label: "Retention SRAM", region: lo, fill_legend: "~250 MHz"}
+  - {id: alert_handler, label: "Alert Handler", region: lo, fill_legend: "~250 MHz"}
+  - {id: otp_fuse_controller, label: "OTP (Fuse) Controller", region: lo, fill_legend: "~250 MHz"}
+  - {id: soc_debug_controller, label: "SoC Debug Controller", region: lo, fill_legend: "~250 MHz", attributes: [blue_outline]}
+  - {id: life_cycle_controller, label: "Life Cycle Controller", region: lo, fill_legend: "~250 MHz"}
+  - {id: peri_tlul_crossbar, label: "Peri TL-UL Cross bar", region: lo, fill_legend: "~250 MHz",
+     note: "Printed on four lines: Peri / TL-UL / Cross / bar. Tall block spanning the domain height."}
+  - {id: gpio_32bit, label: "32bit GPIO", region: lo, fill_legend: "~250 MHz"}
+  - {id: spi_device, label: "1x SPI Device", region: lo, fill_legend: "~250 MHz"}
+  - {id: spi_host, label: "1 x SPI Host", region: lo, fill_legend: "~250 MHz"}
+  - {id: uart_i2c, label: "1 x UART / 1x I2C", region: lo, fill_legend: "~250 MHz"}
+  - {id: pinmux, label: "Pinmux", region: lo, fill_legend: "~250 MHz"}
+  - {id: sensor_control, label: "Sensor Control", region: lo, fill_legend: "~250 MHz", markers: [{color: orange, legend_match: "62.5 MHz"}]}
+  - {id: pwr_clk_rst_mgrs, label: "Pwr & Clk/Rst Mgrs", region: lo, fill_legend: "~250 MHz", markers: [{color: orange, legend_match: "62.5 MHz"}]}
+  # ---- inside wrapper, outside Integrated IP
+  - {id: ctn_tlul_crossbar, label: "CTN TL-UL Crossbar", region: wrapper, fill_legend: "~1 Ghz"}
+  - {id: shared_ctn_sram, label: "Shared CTN SRAM", region: wrapper, fill_legend: "~1 Ghz"}
+  - {id: shared_peripherals, label: "Shared Peripherals", region: wrapper, fill_legend: "~1 Ghz", attributes: [dashed_outline]}
+  - {id: shared_pinmux, label: "Shared Pinmux", region: wrapper, fill_legend: "~250 MHz", attributes: [dashed_outline]}
+  - {id: jtag_tap, label: "JTAG TAP", region: wrapper, fill_legend: "~1 Ghz"}
+  - {id: analog_sensor_top, label: "Analog Sensor Top", region: wrapper, fill_legend: "~1 Ghz",
+     markers: [{color: orange, legend_match: "62.5 MHz"}, {color: purple, legend_match: "~250 MHz"}],
+     unclear: "Block fill is cyan but it carries both an orange and a purple square; the diagram does not say what the squares mean for this block."}
+  - {id: padring, label: "Padring", region: wrapper, fill_legend: "Logic Only"}
+
+# Items outside the chip boundary (the black wrapper outline) or crossing it
+externals:
+  - {id: external_peripherals, label: "External Peripherals", style: "dashed outline, light gray fill"}
+  - {id: external_spi_flash, label: "External SPI Flash", style: "dashed outline, light gray fill"}
+  - {id: dma_system_egress, label: "DMA System Egress", kind: "text label at left wrapper edge; the DMA arrow crosses the boundary"}
+  - {id: irqs_and_alerts, label: "IRQs & Alerts", kind: "text label at left wrapper edge; thin line starts at the boundary"}
+  - {id: ctn_ingress_egress, label: "CTN Ingress / Egress", kind: "one text label for two dashed block arrows that cross the left boundary"}
+
+connections:
+  # ---- Hi-Speed Domain: Ibex, memories, main crossbar
+  - {id: c01, from: ibex_core, to: main_tlul_crossbar, line: thick, heads: to,
+     note: "arrow starts below the 'DUAL LOCKSTEP' tag"}
+  - {id: c02, from: main_tlul_crossbar, to: main_sram, line: thick, heads: none, directed: false}
+  - {id: c03, from: main_sram, to: interrupt_controller, line: thick, heads: to,
+     unclear: "Drawn as a vertical chain crossbar - Main SRAM - Interrupt Controller; the image does not say whether the arrow passes behind Main SRAM from the crossbar."}
+  - {id: c04, from: main_tlul_crossbar, to: shared_mailbox_sram, line: thick, heads: none, directed: false}
+  - {id: c05, from: shared_mailbox_sram, to: rom_partitions, line: thick, heads: to,
+     unclear: "Same chain pattern as c02/c03."}
+  - {id: c06, from: main_tlul_crossbar, to: otbn, line: thick, heads: none, directed: false}
+  - {id: c07, from: main_tlul_crossbar, to: kmac, line: thick, heads: none, directed: false}
+  - {id: c08, from: main_tlul_crossbar, to: edn_0_1, line: thick, heads: none, directed: false}
+  - {id: c09, from: main_tlul_crossbar, to: csrng, line: thick, heads: none, directed: false}
+  - {id: c10, from: key_manager_dpe, to: dma, line: thick, heads: to}
+  - {id: c11, from: hmac, to: soc_proxy, line: thick, heads: to, note: "head lands on the top edge of the SoC Proxy box"}
+  - {id: c12, from: aes, to: nine_x_mailboxes, line: thick, heads: to}
+  - {id: c13, from: debug_module, to: jtag_mailbox, line: thick, heads: to}
+  - {id: c14, from: jtag_mailbox, to: debug_module, line: thick, heads: to,
+     unclear: "Segment at the right of the pair. A headless thick line at the same x continues below JTAG Mailbox down to Dbg TL-UL Crossbar (c25); they may be one line passing behind JTAG Mailbox."}
+  # ---- DMA / SoC Proxy / access control path
+  - {id: c15, from: dma, to: dma_system_egress, line: thick, heads: to, note: "leaves DMA downward then left, arrowhead points left at the wrapper boundary"}
+  - {id: c16, from: dma, to: "soc_proxy.trapezoid", line: thick, heads: to, note: "leaves DMA's right edge, head points down onto the unlabeled trapezoid"}
+  - {id: c17, from: soc_proxy, to: "soc_proxy.trapezoid", line: thick, heads: to, note: "short arrow, head points down onto the trapezoid; drawn inside the SoC Proxy box"}
+  - {id: c18, from: irqs_and_alerts, to: base_addr_translation, line: thin, heads: to,
+     note: "starts at the left wrapper boundary, runs right, up, then right; head touches the left edge of Base Addr Translation"}
+  - {id: c19, from: soc_proxy, to: access_ctrl_range_check, line: thick, heads: none, directed: false,
+     unclear: "Leaves the bottom of SoC Proxy, goes down, left, down to the top of Access Ctrl Range Check; no arrowhead is visible at the end."}
+  - {id: c20, from: mbx_tlul_crossbar, to: nine_x_mailboxes, line: thick, heads: to,
+     drawn_as: "three separate arrows with '...' printed between them", printed_label: "..."}
+  - {id: c21, from: mbx_tlul_crossbar, to: access_ctrl_range_check, line: thick, heads: to, note: "head lands on the right edge"}
+  - {id: c22, from: mbx_tlul_crossbar, to: racl_control, line: thick, heads: to}
+  - {id: c23, from: access_ctrl_range_check, to: ctn_tlul_crossbar, line: thick, heads: to}
+  - {id: c24, from: dbg_tlul_crossbar, to: jtag_mailbox, line: thick, heads: to, note: "arrow at the left of the pair"}
+  - {id: c25, from: dbg_tlul_crossbar, to: jtag_mailbox, line: thick, heads: none, directed: false,
+     unclear: "Headless segment at the right of the pair; see c14."}
+  - {id: c26, from: ctn_tlul_crossbar, to: mbx_tlul_crossbar, line: thick, heads: to, note: "long vertical, head at the bottom of Mbx TL-UL Crossbar"}
+  - {id: c27, from: jtag_tap, to: dbg_tlul_crossbar, line: thick, heads: to, note: "leaves JTAG TAP leftwards, turns up; head at the bottom of Dbg TL-UL Crossbar"}
+  # ---- Dbg crossbar into the Low-Speed domain
+  - {id: c28, from: dbg_tlul_crossbar, to: life_cycle_controller, line: thick, heads: to, note: "shared line leaves the right edge of Dbg TL-UL Crossbar and branches"}
+  - {id: c29, from: dbg_tlul_crossbar, to: soc_debug_controller, line: thick, heads: to, note: "branch of the same line, turns up"}
+  # ---- main to peri crossbar
+  - {id: c30, from: main_tlul_crossbar, to: peri_tlul_crossbar, line: thick, heads: to}
+  # ---- Peri crossbar to its targets (head at the target end)
+  - {id: c31, from: peri_tlul_crossbar, to: timers, line: thick, heads: to}
+  - {id: c32, from: peri_tlul_crossbar, to: retention_sram, line: thick, heads: to}
+  - {id: c33, from: peri_tlul_crossbar, to: alert_handler, line: thick, heads: to}
+  - {id: c34, from: peri_tlul_crossbar, to: otp_fuse_controller, line: thick, heads: to}
+  - {id: c35, from: peri_tlul_crossbar, to: soc_debug_controller, line: thick, heads: to}
+  - {id: c36, from: peri_tlul_crossbar, to: life_cycle_controller, line: thick, heads: to}
+  - {id: c37, from: peri_tlul_crossbar, to: gpio_32bit, line: thick, heads: to}
+  - {id: c38, from: peri_tlul_crossbar, to: spi_device, line: thick, heads: to}
+  - {id: c39, from: peri_tlul_crossbar, to: spi_host, line: thick, heads: to}
+  - {id: c40, from: peri_tlul_crossbar, to: uart_i2c, line: thick, heads: to}
+  - {id: c41, from: peri_tlul_crossbar, to: pinmux, line: thick, heads: to}
+  - {id: c42, from: peri_tlul_crossbar, to: sensor_control, line: thick, heads: to}
+  - {id: c43, from: peri_tlul_crossbar, to: pwr_clk_rst_mgrs, line: thick, heads: to}
+  # ---- thin lines between Pinmux and peripherals (four vertical lines, partly hidden behind blocks)
+  - {id: c44, from: uart_i2c, to: pinmux, line: thin, heads: both, note: "short line between the two boxes, double-headed"}
+  - {id: c45, from: spi_host, to: pinmux, line: thin, heads: both,
+     unclear: "Line is hidden behind 1 x UART / 1x I2C; endpoints inferred from where its two arrowheads appear (SPI Host bottom edge, Pinmux top edge)."}
+  - {id: c46, from: spi_device, to: pinmux, line: thin, heads: both,
+     unclear: "Hidden behind UART and SPI Host; endpoints inferred from arrowheads (SPI Device bottom edge, Pinmux top edge)."}
+  - {id: c47, from: gpio_32bit, to: pinmux, line: thin, heads: both,
+     unclear: "Hidden behind three blocks; endpoints inferred from arrowheads (32bit GPIO bottom edge, Pinmux top edge)."}
+  - {id: c48, from: pwr_clk_rst_mgrs, to: sensor_control, line: thin, heads: to, note: "head at the bottom edge of Sensor Control"}
+  # ---- Pwr & Clk/Rst Mgrs, Analog Sensor Top, Padring
+  - {id: c49, from: pwr_clk_rst_mgrs, to: analog_sensor_top, line: thin, heads: to, note: "leftmost of three vertical lines leaving Pwr & Clk/Rst Mgrs"}
+  - {id: c50, from: pwr_clk_rst_mgrs, to: analog_sensor_top, line: thin, heads: both, note: "middle of the three vertical lines"}
+  - {id: c51, from: pwr_clk_rst_mgrs, to: padring, line: thin, heads: both,
+     unclear: "Rightmost of the three lines; it runs behind Analog Sensor Top and ends with heads at Pwr & Clk/Rst Mgrs and at Padring."}
+  - {id: c52, from: analog_sensor_top, to: padring, line: thin, heads: both}
+  - {id: c53, from: jtag_tap, to: padring, line: thin, heads: both}
+  # ---- CTN crossbar
+  - {id: c54, from: ctn_tlul_crossbar, to: shared_ctn_sram, line: thick, heads: to}
+  - {id: c55, from: ctn_tlul_crossbar, to: shared_peripherals, line: dashed_block, heads: to}
+  - {id: c56, from: ctn_tlul_crossbar, to: shared_pinmux, line: dashed_block, heads: to}
+  - {id: c57, from: ctn_ingress_egress, to: ctn_tlul_crossbar, line: dashed_block, heads: to,
+     note: "upper of the two dashed block arrows at the left edge, pointing into the crossbar",
+     unclear: "One label 'CTN Ingress / Egress' covers both arrows; which half of the label belongs to which arrow is not marked."}
+  - {id: c58, from: ctn_tlul_crossbar, to: ctn_ingress_egress, line: dashed_block, heads: to,
+     note: "lower dashed block arrow, pointing out of the crossbar toward the left boundary"}
+  - {id: c59, from: shared_pinmux, to: padring, line: dashed_thin, heads: to}
+  - {id: c60, from: padring, to: external_peripherals, line: dashed_thin, heads: both}
+  - {id: c61, from: padring, to: external_spi_flash, line: dashed_thin, heads: both, printed_label: "[D|Q]SPI"}

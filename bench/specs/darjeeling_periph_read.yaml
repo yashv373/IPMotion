@@ -1,0 +1,67 @@
+# COMPLEX: subset of the Darjeeling diagram. Every block, label, region and connection comes from
+# bench/truth/opentitan_darjeeling.yaml (transcribed from the diagram) and none is marked `unclear`.
+# One highlighted path: Ibex Core -> Main TL-UL Crossbar -> Peri TL-UL Cross bar -> 1 x UART / 1x I2C.
+# The diagram draws these links one-way (tail -> head). A response is animated by re-lighting the SAME
+# links in reverse order; no extra link is invented.
+source: opentitan_darjeeling
+title: "Darjeeling: Read from the UART / I2C"
+layout_hint: hierarchical
+description: >
+  Ibex Core reaches a Low-Speed peripheral through the Main TL-UL Crossbar and the Peri TL-UL Cross bar.
+  Other targets that hang off the same crossbars are shown but stay idle.
+
+domains:
+  - id: hi
+    label: "Hi-Speed Domain"
+    contains: [ibex_core, main_tlul_crossbar, main_sram, otbn]
+  - id: lo
+    label: "Low-Speed Domain"
+    contains: [peri_tlul_crossbar, timers, gpio_32bit, spi_host, uart_i2c]
+
+blocks:
+  - {id: ibex_core, label: "Ibex Core (RV32IMCB)", role: master}
+  - {id: main_tlul_crossbar, label: "Main TL-UL Crossbar", role: interconnect}
+  - {id: main_sram, label: "Main SRAM", role: memory}
+  - {id: otbn, label: "OTBN", role: peripheral}
+  - {id: peri_tlul_crossbar, label: "Peri TL-UL Cross bar", role: interconnect}
+  - {id: timers, label: "Timers", role: peripheral}
+  - {id: gpio_32bit, label: "32bit GPIO", role: peripheral}
+  - {id: spi_host, label: "1 x SPI Host", role: peripheral}
+  - {id: uart_i2c, label: "1 x UART / 1x I2C", role: peripheral}
+
+connections:
+  - {id: ibex_to_main, truth: c01, from: ibex_core, to: main_tlul_crossbar, bus: tl_ul, direction: forward}
+  - {id: main_sram_link, truth: c02, from: main_tlul_crossbar, to: main_sram, bus: tl_ul, direction: none}
+  - {id: otbn_link, truth: c06, from: main_tlul_crossbar, to: otbn, bus: tl_ul, direction: none}
+  - {id: main_to_peri, truth: c30, from: main_tlul_crossbar, to: peri_tlul_crossbar, bus: tl_ul, direction: forward}
+  - {id: peri_to_timers, truth: c31, from: peri_tlul_crossbar, to: timers, bus: tl_ul, direction: forward}
+  - {id: peri_to_gpio, truth: c37, from: peri_tlul_crossbar, to: gpio_32bit, bus: tl_ul, direction: forward}
+  - {id: peri_to_spi_host, truth: c39, from: peri_tlul_crossbar, to: spi_host, bus: tl_ul, direction: forward}
+  - {id: peri_to_uart, truth: c40, from: peri_tlul_crossbar, to: uart_i2c, bus: tl_ul, direction: forward}
+
+sequence:
+  - banner: "Idle: all blocks waiting"
+  - banner: "Step 1: Ibex Core issues a read request"
+    highlight: [ibex_core]
+    activate: [ibex_to_main]
+    packets: [{conn: ibex_to_main, label: "Read req"}]
+  - banner: "Step 2: Main TL-UL Crossbar forwards the request toward the Low-Speed domain"
+    highlight: [main_tlul_crossbar]
+    activate: [main_to_peri]
+    packets: [{conn: main_to_peri, label: "Read req"}]
+  - banner: "Step 3: Peri TL-UL Cross bar routes the request to 1 x UART / 1x I2C"
+    highlight: [peri_tlul_crossbar]
+    activate: [peri_to_uart]
+    packets: [{conn: peri_to_uart, label: "Read req"}]
+  - banner: "Step 4: 1 x UART / 1x I2C produces the read data"
+    highlight: [uart_i2c]
+    activate: [peri_to_uart]
+  - banner: "Step 5: The response travels back over the same links"
+    highlight: [peri_tlul_crossbar, main_tlul_crossbar]
+    activate: [peri_to_uart, main_to_peri, ibex_to_main]
+    packets: [{conn: peri_to_uart, label: "response", kind: response}, {conn: main_to_peri, label: "response", kind: response}]
+  - banner: "Step 6: Ibex Core receives the data. Read complete"
+    highlight: [ibex_core]
+    activate: [ibex_to_main]
+    packets: [{conn: ibex_to_main, label: "response", kind: response}]
+    hold: 1.5
