@@ -118,7 +118,7 @@ def extract_error(output):
     return "\n".join(lines[-15:])
 
 
-def run_pipeline(user_request, api_key=None, model="gemini-3.8-flash"):
+def run_pipeline(user_request, api_key=None, model="gemini-3.5-flash"):
     """
     Full self-healing pipeline:
     1. Generate script via RAG

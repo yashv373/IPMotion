@@ -89,7 +89,7 @@ def build_prompt(user_request, context):
     )
 
 
-def call_llm(prompt, api_key=None, model="gemini-3.8-flash"):
+def call_llm(prompt, api_key=None, model="gemini-3.5-flash"):
     """
     Call an LLM to generate the Manim script.
     Supports: Google Gemini (default), OpenAI, or local Ollama.
@@ -104,10 +104,10 @@ def call_llm(prompt, api_key=None, model="gemini-3.8-flash"):
             gen_model = genai.GenerativeModel(model)
             response = gen_model.generate_content(prompt)
             return _clean_response(response.text)
-        except ImportError:
-            print("[rag] google-generativeai not installed. pip install google-generativeai")
         except Exception as e:
+            # DO NOT swallow quota errors or other API exceptions
             print(f"[rag] Gemini API error: {e}")
+            raise RuntimeError(f"Gemini API failed: {e}")
 
     # Try OpenAI
     openai_key = os.environ.get("OPENAI_API_KEY")
@@ -121,10 +121,9 @@ def call_llm(prompt, api_key=None, model="gemini-3.8-flash"):
                 temperature=0.2,
             )
             return _clean_response(response.choices[0].message.content)
-        except ImportError:
-            print("[rag] openai not installed. pip install openai")
         except Exception as e:
             print(f"[rag] OpenAI API error: {e}")
+            raise RuntimeError(f"OpenAI API failed: {e}")
 
     # Try local Ollama
     try:
@@ -140,10 +139,7 @@ def call_llm(prompt, api_key=None, model="gemini-3.8-flash"):
         pass
 
     raise RuntimeError(
-        "[rag] No LLM backend available. Set one of:\n"
-        "  - GEMINI_API_KEY (for Google Gemini)\n"
-        "  - OPENAI_API_KEY (for OpenAI GPT-4o)\n"
-        "  - Run Ollama locally (ollama serve)"
+        "[rag] No API keys provided and Ollama is not running. Set GEMINI_API_KEY or OPENAI_API_KEY."
     )
 
 
@@ -162,7 +158,7 @@ def _clean_response(text):
     return text.strip()
 
 
-def generate_script(user_request, api_key=None, model="gemini-3.8-flash", top_k=TOP_K):
+def generate_script(user_request, api_key=None, model="gemini-3.5-flash", top_k=TOP_K):
     """
     Full RAG pipeline: retrieve context → build prompt → call LLM → return script.
 
