@@ -23,6 +23,136 @@ class Theme:
 def ui_text(text, size, color, weight=NORMAL):
     return Text(text, font="Consolas", font_size=size, color=color, weight=weight)
 
+# ==========================================
+# SECTION 0: Ports (v3)
+# ==========================================
+_SIDE_VECTORS = {"LEFT": LEFT, "RIGHT": RIGHT, "UP": UP, "DOWN": DOWN, "TOP": UP, "BOTTOM": DOWN}
+IMPLICIT_PORTS = {"_left": LEFT, "_right": RIGHT, "_top": UP, "_bottom": DOWN}
+
+def normalize_side(edge):
+    """'RIGHT' / 'top' / the Manim constant RIGHT -> unit numpy vector. TOP/BOTTOM are accepted."""
+    if isinstance(edge, str):
+        key = edge.strip().upper()
+        if key not in _SIDE_VECTORS:
+            raise ValueError(f"Unknown edge {edge!r}; use LEFT, RIGHT, UP or DOWN (TOP/BOTTOM also accepted).")
+        return np.array(_SIDE_VECTORS[key], dtype=float)
+    v = np.array(edge, dtype=float)[:3]
+    for cand in (LEFT, RIGHT, UP, DOWN):
+        if np.allclose(v, cand):
+            return np.array(cand, dtype=float)
+    raise ValueError(f"Port side must be LEFT, RIGHT, UP or DOWN, got {edge!r}.")
+
+def side_name(side):
+    """Unit vector -> 'LEFT' / 'RIGHT' / 'UP' / 'DOWN'."""
+    for name in ("LEFT", "RIGHT", "UP", "DOWN"):
+        if np.allclose(side, _SIDE_VECTORS[name]):
+            return name
+    raise ValueError(f"Not an axis-aligned unit vector: {side!r}")
+
+class Port(Dot):
+    """Invisible, named connection point. A real mobject, so it follows move_to / scale / arrange.
+
+    .name   signal name, e.g. "ARVALID" (reserved implicit ports start with "_")
+    .side   outward unit vector: LEFT, RIGHT, UP or DOWN
+    .owner  the block that declares it
+    Use port.get_center() for its position.
+    """
+    is_port = True
+
+    def __init__(self, name, side, position, owner=None, radius=1e-6):
+        super().__init__(point=position, radius=radius, fill_opacity=0, stroke_width=0)
+        self.name = name
+        self.side = normalize_side(side)
+        self.owner = owner
+
+    def side_name(self):
+        return side_name(self.side)
+
+class PortMixin:
+    """Gives a VGroup named ports: port("NAME"), ports(), implicit_ports(), port_names."""
+    def _init_ports(self):
+        self._ports = {}      # declared ports: name -> Port
+        self._implicit = {}   # reserved _left/_right/_top/_bottom
+
+    def _port_owner_label(self):
+        return f"{type(self).__name__}({getattr(self, 'title', getattr(self, '_label', ''))!r})"
+
+    def _register_port(self, name, side, position, implicit=False, strict=True, radius=1e-6):
+        if not implicit:
+            if name.startswith("_"):
+                raise ValueError(f"{self._port_owner_label()}: port name {name!r} is reserved "
+                                 f"(names starting with '_' are implicit edge ports).")
+            if strict and name in self._ports:
+                raise ValueError(f"{self._port_owner_label()}: duplicate port name {name!r}.")
+        port = Port(name, side, position, owner=self, radius=radius)
+        self.add(port)
+        (self._implicit if implicit else self._ports)[name] = port
+        return port
+
+    def port(self, name):
+        if name in self._ports:
+            return self._ports[name]
+        if name in self._implicit:
+            return self._implicit[name]
+        raise KeyError(f"{self._port_owner_label()} has no port {name!r}. "
+                       f"Declared ports: {sorted(self._ports)}. Implicit ports: {sorted(self._implicit)}.")
+
+    def ports(self):
+        """Declared ports only (name -> Port)."""
+        return dict(self._ports)
+
+    def implicit_ports(self):
+        return dict(self._implicit)
+
+    @property
+    def port_names(self):
+        return list(self._ports)
+
+def _dedupe_path(points, eps=1e-9):
+    """Drop repeated points and collinear middle points."""
+    pts = [np.array(p, dtype=float)[:2] for p in points]
+    out = [pts[0]]
+    for p in pts[1:]:
+        if np.linalg.norm(p - out[-1]) > eps:
+            out.append(p)
+    i = 1
+    while i < len(out) - 1:
+        a, b, c = out[i - 1], out[i], out[i + 1]
+        if abs((b - a)[0] * (c - b)[1] - (b - a)[1] * (c - b)[0]) < eps and np.dot(b - a, c - b) > 0:
+            out.pop(i)
+        else:
+            i += 1
+    return [np.array([p[0], p[1], 0.0]) for p in out]
+
+def route_points(p0, side_a, q0, side_b, style="manhattan", stub=0.3, jog=0.8):
+    """Orthogonal path from p0 (leaving along side_a) to q0 (entering against side_b)."""
+    p0, q0 = np.array(p0, dtype=float)[:2], np.array(q0, dtype=float)[:2]
+    if style == "direct":
+        return _dedupe_path([p0, q0])
+    sa, sb = np.array(side_a, dtype=float)[:2], np.array(side_b, dtype=float)[:2]
+    d = q0 - p0
+    if np.allclose(sa, -sb):                                   # opposite faces
+        along = float(d @ sa)
+        perp = d - along * sa
+        if along > 1e-6:                                       # facing each other: straight or Z
+            mid = p0 + (along / 2) * sa
+            return _dedupe_path([p0, mid, mid + perp, q0])
+        p1, q1 = p0 + stub * sa, q0 + stub * sb                # destination is behind: go around
+        if np.linalg.norm(perp) > 1e-6:
+            a, b = p1 + perp / 2, q1 - perp / 2
+        else:                                                  # collinear: jog sideways
+            j = np.array([-sa[1], sa[0]]) * jog
+            a, b = p1 + j, q1 + j
+        return _dedupe_path([p0, p1, a, b, q1, q0])
+    if np.allclose(sa, sb):                                    # same face: U-turn
+        ext = max(float(p0 @ sa), float(q0 @ sa)) + stub
+        return _dedupe_path([p0, p0 + (ext - float(p0 @ sa)) * sa, q0 + (ext - float(q0 @ sa)) * sa, q0])
+    if float(d @ sa) > 1e-6 and float((p0 - q0) @ sb) > 1e-6:  # perpendicular, single corner
+        return _dedupe_path([p0, p0 + float(d @ sa) * sa, q0])
+    p1, q1 = p0 + stub * sa, q0 + stub * sb                    # perpendicular, needs stubs
+    m = p1 + float((q1 - p1) @ sb) * sb
+    return _dedupe_path([p0, p1, m, q1, q0])
+
 class DomainGroup(VGroup):
     def __init__(self, title, x, y, w, h, fill, stroke=None, dashed=False):
         super().__init__()
@@ -64,9 +194,13 @@ class GlowBox(VGroup):
         self.glow2.set_stroke(color)
         return self
 
-class IPBlock(VGroup):
+class IPBlock(PortMixin, VGroup):
+    """Block with a title. ports=[{"label": "ARVALID", "edge": "RIGHT", "name": optional}] declares real,
+    connectable ports (block.port("ARVALID")); _left/_right/_top/_bottom always exist as implicit ports."""
     def __init__(self, title, theme, width=2.5, height=1.5, fill=None, stroke=None, text_color=None, dotted=False, ind=False, font="Consolas", ports=None):
         super().__init__()
+        self._init_ports()
+        self.title = title
         f = fill if fill else theme.panel
         s = stroke if stroke else theme.stroke
         tc = text_color if text_color else theme.text
@@ -91,19 +225,34 @@ class IPBlock(VGroup):
             sq.move_to(self.bg.box.get_corner(UL) + RIGHT*0.2 + DOWN*0.2)
             self.add(sq)
             
+        box = self.bg.box
+        for name, vec in IMPLICIT_PORTS.items():
+            self._register_port(name, vec, box.get_edge_center(vec), implicit=True)
+
         if ports:
-            for p in ports:
-                ptxt = Text(p.get("label", ""), font="Consolas", font_size=10, color="#94A3B8")
-                edge = p.get("edge", "RIGHT")
-                if edge == "RIGHT":
-                    ptxt.move_to(self.bg.box.get_right() + LEFT*0.2)
-                elif edge == "LEFT":
-                    ptxt.move_to(self.bg.box.get_left() + RIGHT*0.2)
-                elif edge == "UP":
-                    ptxt.move_to(self.bg.box.get_top() + DOWN*0.15)
-                elif edge == "DOWN":
-                    ptxt.move_to(self.bg.box.get_bottom() + UP*0.15)
-                self.add(ptxt)
+            by_edge = {}
+            for i, p in enumerate(ports):
+                side = normalize_side(p.get("edge", "RIGHT"))
+                by_edge.setdefault(side_name(side), []).append((i, p, side))
+            for edge_name, items in by_edge.items():
+                k = len(items)
+                for j, (i, p, side) in enumerate(items):
+                    frac = (j + 1) / (k + 1)               # k == 1 -> edge centre, as before
+                    if edge_name in ("LEFT", "RIGHT"):
+                        y = box.get_top()[1] - frac * (box.get_top()[1] - box.get_bottom()[1])
+                        x = box.get_right()[0] if edge_name == "RIGHT" else box.get_left()[0]
+                        pos, inset = np.array([x, y, 0.0]), (LEFT if edge_name == "RIGHT" else RIGHT) * 0.2
+                    else:
+                        x = box.get_left()[0] + frac * (box.get_right()[0] - box.get_left()[0])
+                        y = box.get_top()[1] if edge_name == "UP" else box.get_bottom()[1]
+                        pos, inset = np.array([x, y, 0.0]), (DOWN if edge_name == "UP" else UP) * 0.15
+                    label = p.get("label", "")
+                    name = p.get("name") or label or f"{edge_name.lower()}_{j}"
+                    self._register_port(name, side, pos)
+                    if label:
+                        ptxt = Text(label, font="Consolas", font_size=10, color="#94A3B8")
+                        ptxt.move_to(pos + inset)
+                        self.add(ptxt)
 
 class Wire(VGroup):
     def __init__(self, start_obj=None, end_obj=None, start_edge=DOWN, end_edge=UP, manhattan=False, color="#6B7280", waypoints=None):
@@ -176,6 +325,22 @@ class ManhattanRoute(VGroup):
         anims.append(FadeOut(pkt, run_time=0.2))
         return Succession(*anims)
 
+class Connection(ManhattanRoute):
+    """Port-to-port wire. Leaves src along its side, enters dst against its side, orthogonal bends.
+
+    style="manhattan" (default) or "direct" (single arrow). Keeps .src / .dst for verification and
+    inherits ManhattanRoute's glow and .transfer() packet animation. Geometry is built at construction
+    time; build it after the blocks are positioned.
+    """
+    def __init__(self, src, dst, style="manhattan", color="#6B7280", stub=0.3):
+        if not (getattr(src, "is_port", False) and getattr(dst, "is_port", False)):
+            raise TypeError("Connection needs Port objects, e.g. Connection(master.port('ARVALID'), slave.port('_left')).")
+        if style not in ("manhattan", "direct"):
+            raise ValueError(f"style must be 'manhattan' or 'direct', got {style!r}")
+        self.src, self.dst, self.style = src, dst, style
+        pts = route_points(src.get_center(), src.side, dst.get_center(), dst.side, style, stub)
+        super().__init__(pts, color)
+
 class Banner(VGroup):
     def __init__(self, title, theme):
         super().__init__()
@@ -186,28 +351,45 @@ class Banner(VGroup):
     def update_text(self, new_title, theme, color=None):
         c = color if color else theme.text
         new_txt = ui_text(new_title, 24, c, BOLD).move_to(self.bg)
+        # group=self keeps the Banner itself as the animated mobject. Without it Manim re-adds
+        # Group(txt, bg) to the scene, which draws the 0.9-opacity bg OVER the new text.
         return AnimationGroup(
             Transform(self.txt, new_txt),
-            self.bg.animate.set_color(c) if color else Wait(0.1)
+            self.bg.animate.set_color(c) if color else Wait(0.1),
+            group=self,
         )
 
 # ==========================================
 # SECTION 2: Base Component Class
 # ==========================================
-class HWComponent(VGroup):
-    """Base class for all hardware symbol presets."""
+class HWComponent(PortMixin, VGroup):
+    """Base class for all hardware symbol presets. Pins are Ports: comp.port("sel"), comp.get_pin("sel")."""
     def __init__(self, label='', theme=None, color=None, scale=1.0):
         super().__init__()
-        self.pins = {}  # name -> Dot
+        self._init_ports()
+        self.pins = self._ports  # name -> Port (same dict; kept for backward compatibility)
         self.theme = theme or Theme()
         self._color = color or self.theme.active
         self._label = label
         self._scale = scale
     
-    def _add_pin(self, name, pos):
-        dot = Dot(pos, radius=0.01, fill_opacity=0)
-        self.add(dot)
-        self.pins[name] = dot
+    def _infer_side(self, pos):
+        """Outward side of a pin: the face of the body it lies closest to (relative to body extents)."""
+        body = getattr(self, "body", None)
+        if body is None or len(body.get_all_points()) == 0:
+            return RIGHT if pos[0] >= 0 else LEFT
+        c = body.get_center()
+        dx = (pos[0] - c[0]) / max(body.width / 2, 1e-6)
+        dy = (pos[1] - c[1]) / max(body.height / 2, 1e-6)
+        if abs(dx) >= abs(dy):
+            return RIGHT if dx >= 0 else LEFT
+        return UP if dy >= 0 else DOWN
+
+    def _add_pin(self, name, pos, side=None):
+        pos = np.array(pos, dtype=float)
+        # strict=False and radius 0.01 keep the pre-v3 behaviour (silent overwrite, same bounding box)
+        self._register_port(name, self._infer_side(pos) if side is None else side, pos,
+                            strict=False, radius=0.01)
         
     def get_pin(self, name):
         """Get the world-space position of a named pin."""
@@ -1065,14 +1247,14 @@ class BusBar(HWComponent):
             
             for i in range(taps):
                 y = l/2 - (i + 1) * (l / (taps + 1))
-                self._add_pin(f'tap_{i}', np.array([0, y, 0]))
+                self._add_pin(f'tap_{i}', np.array([0, y, 0]), side=RIGHT)
         else:
             self.body = Line([-l/2, 0, 0], [l/2, 0, 0], color=c, stroke_width=6)
             self.add(self.body)
             
             for i in range(taps):
                 x = -l/2 + (i + 1) * (l / (taps + 1))
-                self._add_pin(f'tap_{i}', np.array([x, 0, 0]))
+                self._add_pin(f'tap_{i}', np.array([x, 0, 0]), side=UP)
                 
         self.bg = self.body
         self._build_label(ORIGIN, font_size=12)
@@ -1355,22 +1537,22 @@ class CustomMacro(HWComponent):
                     x = -w/2 + (i + 1) * w / (n + 1)
                     pos = np.array([x, h/2, 0])
                     self.add(Line(pos, pos + UP*0.2*s, color=c, stroke_width=2))
-                    self._add_pin(name, pos + UP*0.2*s)
+                    self._add_pin(name, pos + UP*0.2*s, side=UP)
                 elif edge == 'BOTTOM':
                     x = -w/2 + (i + 1) * w / (n + 1)
                     pos = np.array([x, -h/2, 0])
                     self.add(Line(pos, pos + DOWN*0.2*s, color=c, stroke_width=2))
-                    self._add_pin(name, pos + DOWN*0.2*s)
+                    self._add_pin(name, pos + DOWN*0.2*s, side=DOWN)
                 elif edge == 'LEFT':
                     y = h/2 - (i + 1) * h / (n + 1)
                     pos = np.array([-w/2, y, 0])
                     self.add(Line(pos, pos + LEFT*0.2*s, color=c, stroke_width=2))
-                    self._add_pin(name, pos + LEFT*0.2*s)
+                    self._add_pin(name, pos + LEFT*0.2*s, side=LEFT)
                 elif edge == 'RIGHT':
                     y = h/2 - (i + 1) * h / (n + 1)
                     pos = np.array([w/2, y, 0])
                     self.add(Line(pos, pos + RIGHT*0.2*s, color=c, stroke_width=2))
-                    self._add_pin(name, pos + RIGHT*0.2*s)
+                    self._add_pin(name, pos + RIGHT*0.2*s, side=RIGHT)
 
         self.bg = self.body
         self._build_label(ORIGIN, font_size=12)

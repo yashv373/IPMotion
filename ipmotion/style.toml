@@ -1,0 +1,28 @@
+# Machine-readable style/lint thresholds. M2 extends this with layout conventions
+# (flow direction, fonts, color meanings); the linter reads only [lint] today.
+# Distances are Manim scene units (frame is 8.0 units tall).
+
+[lint]
+reference_height_px = 1080      # legibility is judged as if rendered at 1080p
+
+# out_of_frame
+frame_safe_margin = 0.15        # warn when something is closer than this to the frame edge
+
+# min_spacing
+min_block_gap = 0.15            # warn when two blocks are closer than this
+min_label_gap = 0.05            # warn when a free label is closer than this to a foreign block
+
+# text_overlap
+text_overlap_pad = 0.01         # bboxes are shrunk by this before testing intersection
+
+# text_occluded
+occlusion_min_fill = 0.5        # a later-drawn shape hides text only if its fill opacity >= this
+occlusion_min_coverage = 0.05   # ...and covers at least this fraction of the text box
+
+# dangling_endpoint
+endpoint_tolerance = 0.25       # an end must be within this of a port or block boundary
+junction_tolerance = 0.05       # ...or this close to another connector
+
+# min_text_size: cap height of the rendered glyphs, in pixels at reference_height_px
+min_text_cap_px_error = 9
+min_text_cap_px_warn = 12

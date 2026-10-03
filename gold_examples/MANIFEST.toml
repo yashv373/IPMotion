@@ -10,18 +10,19 @@ status = "indexable"
 scene = "AxiReadHandshakeScene"
 lint_role = "baseline"
 reason = "Renders cleanly; reference layout for master/slave channels."
-notes = "Banner text dims after update_text: library bug in Banner.update_text, not in this script."
+notes = "Lints with 0 errors (M1). Accepted warnings: blocks 0.08 from frame edge, banner wider than frame (full-bleed bar). Banner dim-text bug fixed in ipmotion_lib.Banner.update_text."
 
 [files."darjeeling_full.py"]
-status = "indexable"
+status = "excluded"
 scene = "DarjeelingFull"
 lint_role = "known_bad"
-reason = "Renders, uses only current library classes."
+reason = "Renders, but the layout has overlapping blocks and hidden text; indexing it would teach overlaps."
 known_defects = [
-  "Low-speed blocks (Timers..Life Cycle) overlap the Hi-Speed domain border and cover Debug Module, JTAG Mailbox, Dbg Crossbar",
-  "'ROM Partitions' text overflows its block",
-  "Mbx Crossbar overlaps neighbouring blocks",
+  "Low-Speed blocks overlap Hi-Speed blocks and straddle the Hi-Speed domain border (min_spacing errors)",
+  "CSRNG (98%), Debug Module (75%), JTAG Mailbox (75%), Dbg Crossbar (90%) are covered by later-drawn Low-Speed blocks (text_occluded)",
+  "~45 labels render below the 12px cap-height warning level (min_text_size warnings)",
 ]
+# note: the earlier claim "'ROM Partitions' text overflows its block" was NOT confirmed by the linter.
 
 [files."symbol_showcase.py"]
 status = "excluded"
@@ -30,8 +31,8 @@ lint_role = "known_bad"
 reason = "Visual defects; kept as a lint fixture."
 known_defects = [
   "Banner placed at y=7.5, entirely outside the frame (top = 4.0)",
-  "Gate/symbol labels ~8 px tall at 1080p",
-  "FALLBACK box clipped at the bottom edge",
+  "~40 gate/symbol labels render at ~7.7 px cap height at 1080p (min_text_size errors)",
+  "FALLBACK box is 0.02 units and the XBAR label 0.00 units from the bottom frame edge (warnings; not actually clipped)",
 ]
 
 [files."darjeeling_v3_polished.py"]
