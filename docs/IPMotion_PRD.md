@@ -70,6 +70,9 @@ Research into state-of-the-art tools (e.g., `manimAnimationAgent`) revealed that
 *   **Layout Quality:** Because the LLM was grounded in past `FDU` scripts, it used `VGroup.arrange()` and exact edge coordinates (`.get_right()`) instead of algorithmic grids, resulting in clean, human-like layouts.
 *   **Obstacles Overcome:** Handled API rate limits (Gemini free tier restrictions) by swapping model strings (`gemini-3.8-flash`) and caching successful outputs. 
 
+### Correction (v3 Phase 0, 2026-10-03): the "PyAV stride bug" was the scipy mock
+The rendering corruption previously attributed to a Windows "PyAV stride bug" (diagonal shearing, see the warning in `indexer.py`) was actually caused by a mock `scipy/` package in the project root. Its `Rotation.as_matrix()` always returned the identity matrix, and it shadowed the real scipy whenever the project root was on `sys.path`. That is always the case for `runner.py`, which renders `_render_temp.py` from the project root. The result was upside-down text and rounded rectangles skewed into trapezoids, at every resolution, independent of `config.pixel_width`. The mock also broke the `sentence-transformers` import. It was removed in v3 milestone M0 and is still recoverable from the baseline commit. The rule against setting `config.pixel_width`/`frame_width` in scripts is kept as a consistency convention, not as a bug workaround.
+
 ---
 
 ## 5. Future Roadmap: The Continuous Learning Flywheel

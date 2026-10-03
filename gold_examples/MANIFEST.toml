@@ -1,0 +1,59 @@
+# Index status for gold examples (gold files themselves are read-only).
+# status: "indexable" = may be embedded into the RAG store
+#         "excluded"  = must not be indexed (reason given)
+# lint_role: "baseline"   = must lint with zero errors
+#            "known_bad"  = lint must report the listed defects
+#            "none"       = not used as a lint reference
+
+[files."axi_read_handshake.py"]
+status = "indexable"
+scene = "AxiReadHandshakeScene"
+lint_role = "baseline"
+reason = "Renders cleanly; reference layout for master/slave channels."
+notes = "Banner text dims after update_text: library bug in Banner.update_text, not in this script."
+
+[files."darjeeling_full.py"]
+status = "indexable"
+scene = "DarjeelingFull"
+lint_role = "known_bad"
+reason = "Renders, uses only current library classes."
+known_defects = [
+  "Low-speed blocks (Timers..Life Cycle) overlap the Hi-Speed domain border and cover Debug Module, JTAG Mailbox, Dbg Crossbar",
+  "'ROM Partitions' text overflows its block",
+  "Mbx Crossbar overlaps neighbouring blocks",
+]
+
+[files."symbol_showcase.py"]
+status = "excluded"
+scene = "SymbolShowcase"
+lint_role = "known_bad"
+reason = "Visual defects; kept as a lint fixture."
+known_defects = [
+  "Banner placed at y=7.5, entirely outside the frame (top = 4.0)",
+  "Gate/symbol labels ~8 px tall at 1080p",
+  "FALLBACK box clipped at the bottom edge",
+]
+
+[files."darjeeling_v3_polished.py"]
+status = "excluded"
+scene = "DarjeelingV3Polished"
+lint_role = "none"
+reason = "NameError: MuxBlock is not defined in ipmotion_lib.py."
+
+[files."darjeeling_v4_advanced.py"]
+status = "excluded"
+scene = "DarjeelingV4Advanced"
+lint_role = "none"
+reason = "NameError: MuxBlock is not defined in ipmotion_lib.py."
+
+[files."fifo_backpressure_test.py"]
+status = "excluded"
+scene = "FifoBackpressureScene"
+lint_role = "none"
+reason = "NameError: Panel, FifoGrid, Gate, BusRoute are not defined in ipmotion_lib.py."
+
+[files."darjeeling_exact.py"]
+status = "excluded"
+scene = "DarjeelingExact"
+lint_role = "none"
+reason = "Sets config.pixel_width/pixel_height/frame_width and does not use ipmotion_lib."
