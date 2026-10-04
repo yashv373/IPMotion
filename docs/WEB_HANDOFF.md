@@ -55,7 +55,9 @@ The three pages are plain hand-edited HTML with duplicated header/footer. No bui
 - OpenAI was dropped: CORS from a browser was never verified.
 
 ## Not done / not verified
-- No real LLM call has been tested (needs a key). Pages deploy and the report link not yet confirmed live.
+- No real LLM call has been tested (needs a key): the generator form is the one unverified path.
+- Pages deploy IS confirmed live (2026-10-04): /, /changelog.html, /report.html, the gallery GIFs and
+  /rag_context/*.txt all return 200 at https://yashv373.github.io/IPMotion/ and serve the current content.
 - The Darjeeling GIF shows the banner text mid-change in some frames (the known "text at a keyframe can be caught mid-change" limit).
 - Gallery text and changelog rows are hand-copied from docs/PROGRESS.md, so they go stale unless the rule above is kept. Nothing enforces it yet: two cheap tests would (rag_context holds no truth-file chip name; 20_example_axi.txt still matches the gold file).
 - Regenerate GIFs: `python -m manim render -ql --format gif --fps 12 --media_dir <scratch> <file> <Scene>`, then ffmpeg
