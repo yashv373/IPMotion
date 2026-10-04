@@ -40,4 +40,6 @@ code{background:var(--panel);padding:1px 5px;border-radius:4px}
 @media (prefers-reduced-motion:reduce){.hero-logo{animation:none}.brand img{transition:none}}
 @media (max-width:640px){.credit{display:none}}
 .card:has(.about-logo){padding:36px 40px;line-height:1.85}
-@media (max-width:640px){.card:has(.about-logo){padding:24px 20px}.about-logo{height:72px}}
+@media (max-width:640px){.card:has(.about-logo){padding:24px 20px}.card .about-logo{height:64px}}
+.card .about-logo{width:auto;aspect-ratio:auto;background:none;border-radius:0;object-fit:initial;height:84px}
+td.note{white-space:nowrap}
