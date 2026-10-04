@@ -9,7 +9,7 @@
 <section class="hero"><h1>How it works</h1><p>IPMotion treats a diagram animation as something a program can measure. A model proposes; geometry and a renderer check. This page describes the full local pipeline, and what this website skips.</p></section>
 
 <h2>1. Source of truth</h2>
-<p>Architecture facts come from hand-transcribed <strong>truth files</strong> (YAML: blocks, domains, connections, fills), never from a model's memory. A <strong>layout file</strong> adds pixel boxes detected from the reference picture's fill colours, plus hand-read wire routes. Truth files are never indexed or put in prompts, which protects the benchmark from leaking.</p>
+<p>Architecture facts come from hand-transcribed <strong>truth files</strong> (YAML: blocks, domains, connections, fills), never from a model's memory. A <strong>layout file</strong> adds pixel boxes detected from the reference picture's fill colours, plus hand-read wire routes. Two of these chips (Earlgrey, Darjeeling) are now turned into full worked example scripts that the generator reads, so it has a blueprint rather than a guess. A third, Peppermint, is deliberately held back and never put in a prompt, so scoring the generator against it stays an honest exam.</p>
 
 <h2>2. Schemas and validation</h2>
 <p><code>spec_validator</code> checks a spec against a schema: unique ids, connections that name real blocks, nested domains, <code>scope: full</code> for whole diagrams, and an explicit <code>unconfirmed</code> flag for things the picture does not make clear. Unclear items are drawn amber-dashed and listed for a human to confirm, never silently dropped.</p>
@@ -37,7 +37,7 @@
 <p><strong>v3 (this website):</strong> the model writes a whole Manim script against the library. <strong>v4 (local):</strong> code draws the whole diagram from truth + layout, and only the story varies, so the diagram is deterministic.</p>
 
 <h2>What this website does</h2>
-<p>Context stuffing: it fetches four static text files (rules, library API, one verified gold example, notes), appends your story and diagram text, and sends one request from your browser to your provider. <strong>No lint, no conformance check and no repair loop run here.</strong> Run <code>python -m ipmotion.lint script.py</code> locally to get them.</p>
+<p>Context stuffing: it fetches five static text files &mdash; the rules, the library API, a small verified gold example, a full worked example of a real 40-block chip, and input notes &mdash; appends your story and diagram text, and sends one request from your browser to your provider. <strong>No lint, no conformance check and no repair loop run here.</strong> Run <code>python -m ipmotion.lint script.py</code> locally to get them.</p>
 <p><a class="btn" href="index.html#generator">Try the generator</a></p>
 <h2>About</h2><p class="card"><img class="about-logo" src="assets/logo.png" alt="IPMotion by Yashvardhan Singh" height="96">IPMotion turns a hardware block diagram and a short story into a Manim animation.
 <strong>Ideated by Yashvardhan Singh | Development by Claude Code</strong>. Source: <a href="https://github.com/yashv373/IPMotion">github.com/yashv373/IPMotion</a>.</p>
