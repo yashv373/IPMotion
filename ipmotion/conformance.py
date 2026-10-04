@@ -155,25 +155,23 @@ def _richest(snaps):
     return max(range(len(snaps)), key=lambda i: (sum(1 for u in snaps[i]["units"] if not u.get("transient")), i))
 
 
-def check_dynamic(result: dict, spec: dict) -> list[dict]:
-    snaps = result.get("snapshots") or []
-    if not snaps:
-        return []
-    labels, banners = labels_and_banners(spec)
-    issues: list[dict] = []
-    rich = snaps[_richest(snaps)]
+def locate_blocks(snaps: list, spec: dict, layout: dict | None = None):
+    """Map every spec block id to the box of the thing drawn with its label.
 
+    A real diagram can repeat a name (Earlgrey draws 'Pinmux' once per power domain), and Manim's Text.text
+    drops spaces, so 'TL-UL Crossbar' and 'TL-UL Cross bar' read the same here as well. When several spec
+    blocks share a drawn name, they are told apart by position: the reference boxes (layout) are in the same
+    left-to-right / top-to-bottom order as the drawing. -> (block_box, issues, seen)
+    """
+    issues: list[dict] = []
     seen: dict[str, tuple[int, dict]] = {}          # normalized text -> (latest snapshot index, text unit)
     for si, snap in enumerate(snaps):
         for u in snap["units"]:
             if u["kind"] == "text":
                 seen[_norm(u.get("text", ""))] = (si, u)
 
-    def find_block(label):
-        hit = seen.get(_norm(label))
-        if not hit:
-            return None
-        si, t = hit
+    def owner_box(si, t):
+        """The block (or region) a piece of text belongs to."""
         snap = snaps[si]
         by_id = {u["id"]: u for u in snap["units"]}
         owner = by_id.get(t.get("owner"))
@@ -181,19 +179,58 @@ def check_dynamic(result: dict, spec: dict) -> list[dict]:
             return owner["bbox"], owner
         cx, cy = (t["bbox"][0] + t["bbox"][2]) / 2, (t["bbox"][1] + t["bbox"][3]) / 2
         for u in snap["units"]:
-            if u["kind"] in ("block", "container", "shape") and u["bbox"][0] <= cx <= u["bbox"][2] \
-                    and u["bbox"][1] <= cy <= u["bbox"][3]:
+            if u["kind"] in ("block", "container", "shape") and u["bbox"][0] <= cx <= u["bbox"][2]                     and u["bbox"][1] <= cy <= u["bbox"][3]:
                 return u["bbox"], u
         return t["bbox"], None
 
-    # blocks present
-    block_box = {}
+    def candidates(label):
+        hit = seen.get(_norm(label))
+        if not hit:
+            return []
+        si = hit[0]
+        out, boxes = [], set()
+        for u in snaps[si]["units"]:
+            if u["kind"] == "text" and _norm(u.get("text", "")) == _norm(label):
+                box, _unit = owner_box(si, u)
+                if tuple(box) not in boxes:
+                    boxes.add(tuple(box))
+                    out.append(box)
+        return out
+
+    block_box: dict[str, list] = {}
+    by_label: dict[str, list] = {}
     for b in spec.get("blocks") or []:
-        found = find_block(b["label"])
+        by_label.setdefault(_norm(b["label"]), []).append(b)
+    for _norm_label, group in by_label.items():
+        found = candidates(group[0]["label"])
         if not found:
-            issues.append(_issue("conformance_block", f"block {b['id']!r}: no text with the exact label {b['label']!r} is drawn"))
-        else:
-            block_box[b["id"]] = found[0]
+            for b in group:
+                issues.append(_issue("conformance_block",
+                                     f"block {b['id']!r}: no text with the exact label {b['label']!r} is drawn"))
+            continue
+        if len(group) == 1 or len(found) < len(group) or not layout:
+            for b in group:
+                block_box[b["id"]] = found[0]
+            if len(group) > 1 and len(found) < len(group):
+                issues.append(_issue("conformance_block", f"{len(group)} blocks are named {group[0]['label']!r} "
+                                                          f"but only {len(found)} are drawn"))
+            continue
+        ref = layout.get("blocks", {})
+        order = sorted(group, key=lambda b: (ref.get(b["id"], [0, 0])[0], ref.get(b["id"], [0, 0])[1]))
+        drawn = sorted(found, key=lambda bb: (bb[0], -bb[3]))      # scene y grows upwards, image y downwards
+        for b, bb in zip(order, drawn):
+            block_box[b["id"]] = bb
+    return block_box, issues, seen
+
+
+def check_dynamic(result: dict, spec: dict, layout: dict | None = None) -> list[dict]:
+    snaps = result.get("snapshots") or []
+    if not snaps:
+        return []
+    labels, banners = labels_and_banners(spec)
+    rich = snaps[_richest(snaps)]
+    block_box, issues, seen = locate_blocks(snaps, spec, layout)
+
     # blocks drawn that the spec does not have
     want = {_norm(v) for v in labels.values()} | {_norm(b) for b in banners}
     for u in rich["units"]:
@@ -322,5 +359,5 @@ def check_dynamic(result: dict, spec: dict) -> list[dict]:
     return issues
 
 
-def check(script_text: str, result: dict, spec: dict) -> list[dict]:
-    return check_static(script_text, spec) + check_dynamic(result, spec)
+def check(script_text: str, result: dict, spec: dict, layout: dict | None = None) -> list[dict]:
+    return check_static(script_text, spec) + check_dynamic(result, spec, layout)

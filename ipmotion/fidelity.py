@@ -14,28 +14,15 @@ import collections
 from ipmotion import conformance as C
 
 
-def _locate(snaps, spec):
-    """block id -> bbox of the box that holds its label (latest snapshot where the label is drawn)."""
-    seen = {}
-    for si, snap in enumerate(snaps):
-        for u in snap["units"]:
-            if u["kind"] == "text":
-                seen[C._norm(u.get("text", ""))] = (si, u)
-    out = {}
-    for b in spec.get("blocks") or []:
-        hit = seen.get(C._norm(b["label"]))
-        if not hit:
-            continue
-        si, t = hit
-        by = {u["id"]: u for u in snaps[si]["units"]}
-        owner = by.get(t.get("owner"))
-        out[b["id"]] = owner["bbox"] if owner and owner["kind"] in ("block", "container") else t["bbox"]
-    return out
+def _locate(snaps, spec, layout=None):
+    """block id -> bbox of the box that holds its label (same mapping the conformance check uses, so blocks
+    that share a name are told apart the same way)."""
+    return C.locate_blocks(snaps, spec, layout)[0]
 
 
 def score(result: dict, spec: dict, layout: dict) -> dict:
     snaps = result.get("snapshots") or []
-    issues = C.check_dynamic(result, spec) if snaps else []
+    issues = C.check_dynamic(result, spec, layout) if snaps else []
     by = collections.Counter(i["check"] for i in issues)
     blocks = spec.get("blocks") or []
     conns = spec.get("connections") or []
@@ -52,7 +39,7 @@ def score(result: dict, spec: dict, layout: dict) -> dict:
     wires_bad = sum(int(c.get("count", 1)) for c in conf_conns if c["id"] in bad_conf_ids)
     domains = spec.get("domains") or []
     bad_dom = {i["detail"].split("'")[1] for i in issues if i["check"] == "conformance_domain" and "'" in i["detail"]}
-    located = _locate(snaps, spec) if snaps else {}
+    located = _locate(snaps, spec, layout) if snaps else {}
 
     # layout agreement: left/right and above/below order of every pair of drawn blocks, vs the reference pixels
     px = {k: ((v[0] + v[2]) / 2, (v[1] + v[3]) / 2) for k, v in layout["blocks"].items()}

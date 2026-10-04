@@ -5,6 +5,7 @@
 | M0 | Housekeeping: git, .gitignore, scipy mock removal, MANIFEST, pytest, docs | Done (2026-10-03) |
 | M1 | A (port API) + C (geometric lint) + tests | **Done** (2026-10-03) |
 | M1.5 | End-to-end benchmark (spec -> animation), v2 vs v3 | **In progress**: Darjeeling run done, others pending |
+| M1.6 | Whole-diagram polish + a second chip (Earlgrey) on the same engine | **Done** (2026-10-04) |
 | M2 | B (STYLE.md + style.toml layout conventions) | Next |
 | M3 | F (LLM layer) + G (run logging) | Pending |
 | M4 | E (ordered repair loop) | Pending |
@@ -86,3 +87,55 @@ Built:
 Result (Darjeeling, story "Ibex reads from the UART / I2C"): 49/49 blocks, 4/4 regions, 53/53 sure wires, 0 extras, 100% order agreement, 12 unconfirmed (10 wires, 2 blocks), lint errors 0, spec errors 0. CAVEAT: these compare the drawing with the hand-written notes of the picture, not with the picture; the user judges by eye (report shows reference beside render).
 Known limits: three labels are as small as in the reference (warnings, not errors); text at the 25% keyframe can be caught mid-change; the notes (truth+layout) are hand-made for Darjeeling only; reading a new image automatically (vision model) and the story-from-text step (LLM) are not built; other diagrams (Earlgrey, Peppermint) have truth but no layout file yet.
 Next: user reviews the report (reference vs render, and the 12 unconfirmed items); then layout files for Earlgrey/Peppermint to test the same engine on different chips; later the LLM story step and vision transcription when quota allows.
+
+## M1.6 polish + second chip: Earlgrey (2026-10-04)
+Goal (user): finish the look of the Darjeeling full-diagram render, then prove the engine repeats on another
+chip. User also asked for 1920x1080 renders (the standard landscape video size).
+
+**Polish (all in `ipmotion/diagram.py`, shared by every diagram):**
+- *Text size.* Line breaks were chosen with a character-count guess that disagreed with the size the text was
+  actually given, so a handful of blocks shrank far below the rest. `text_metrics()` now measures Consolas once
+  (character width, line pitch, glyph height per point) and `wrap_label`/`fit_size` pick the break that really
+  fits. Block titles also use `line_spacing=0.25` (new optional argument on `IPBlock`, default unchanged), so a
+  3-line title is viable. Darjeeling: common size 9.8 -> 12.4, smallest 6.3 -> 7.8.
+- *Margin labels* ("DMA System Egress", "IRQs & Alerts", "CTN Ingress / Egress") were tiny and clipped. They now
+  have their own font size (12), are broken to ~11 characters a line, sit in a gutter left of the drawing (their
+  wire leaves the drawing to reach them, as the reference shows), and are kept inside the frame.
+- *Legend swatches* no longer land on letters: swatches go to free corners (top-left, then bottom-right), the
+  title gives up that strip, and `_clear_markers` checks the real per-line glyph boxes afterwards.
+- *Wires no longer run over blocks.* `_avoid` re-routes a wire that would cross a block that is not one of its
+  own ends, through the nearest free channel, preferring the channel the reference used; nested blocks (Base Addr
+  Translation inside SoC Proxy) are not treated as obstacles, margin labels are. A detour never starts where
+  another wire ends (they would be read as one long wire). Darjeeling went from 8 crossings to 0.
+- *Frame.* Renders are 1920x1080 at 30 fps (`bench/common.py`). The drawing is scaled to the frame height AND to
+  the width left once the step panel has its minimum 4.8 units, so a landscape reference is not pushed off the
+  panel; the panel, its title and its legend follow the drawing's edge. Frame margin 0.16 (above the linter's
+  0.15 safe margin), so no more edge warnings.
+
+**Earlgrey (second chip, same engine, no new drawing code):**
+- `bench/truth/opentitan_earlgrey.layout.yaml`: 40 block boxes + 4 region boxes detected from the reference
+  image's fill colours (one connected region per fill), 1 extra (the dual-lockstep shadow), 5 route hints.
+  All 40 connections route automatically.
+- `bench/stories/earlgrey_ibex_uart_read.yaml` + `bench/scenes/earlgrey_ibex_uart_read.py` (Ibex reads the 4x UART).
+- Result: 40/40 blocks, 4/4 regions, 39/39 sure wires, 0 extras, 100% order agreement, 1 unconfirmed, 0 lint
+  errors, 0 spec errors. Darjeeling re-run after the polish: 49/49, 4/4, 53/53, 0 extras, 100%, 12 unconfirmed,
+  0 + 0 errors.
+
+**Checker fix the second chip exposed (`ipmotion/conformance.py`):** a real diagram repeats names -- Earlgrey
+draws "Pinmux", "Clk/Rst Managers" and "Analog Sensor Top" once per power domain -- and Manim's `Text.text`
+drops spaces, so "TL-UL Crossbar" and "TL-UL Cross bar" also read the same. Block lookup used a label->text dict,
+so all of them collapsed onto one box (31 false errors). New `conformance.locate_blocks(snaps, spec, layout)`
+collects every drawn candidate for a name and, when several spec blocks share it, pairs them with the drawn
+boxes in reference order (left-to-right, top-to-bottom). The layout is threaded through
+`lint_script(..., layout=)` -> `conformance.check(..., layout)`; `fidelity` uses the same mapping. Without a
+layout (v3, AI-written scripts) the old single-box behaviour stands and a warning is raised when a name is drawn
+fewer times than the spec needs.
+
+**Tests:** `tests/test_earlgrey_diagram.py` (11 tests): spec/layout completeness, no wire over a block (both
+chips), swatch clearance (both chips), everything inside the frame and clear of the panel (both chips),
+duplicate names told apart with the layout and not without it, perfect fidelity score, story scene clean.
+Whole suite: 181 passing.
+
+**Known limits unchanged:** the numbers compare the drawing with the hand-written notes of the picture, not with
+the picture; Peppermint has truth but no layout file yet; the vision transcription and the LLM story step are
+still not built.

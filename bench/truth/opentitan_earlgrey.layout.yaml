@@ -1,0 +1,67 @@
+# LAYOUT for opentitan_earlgrey.yaml: where things are on the reference image (pixels). Never indexed, never in prompts.
+source_image: opentitan_archs/top_earlgrey_block_diagram.png
+image_size: [1069, 690]
+note: 'Pixel boxes detected from the reference image fills (one connected region per block fill colour); routes
+  read from the picture. Units: image pixels.'
+regions:
+  chip: [9, 11, 1055, 638]
+  top: [25, 48, 1043, 534]
+  pd_main: [41, 84, 795, 518]
+  pd_aon: [811, 84, 1033, 518]
+blocks:
+  # ---- earlgrey_pd_main, left group -------------------------------------
+  ibex_core: [59, 116, 228, 209]
+  interrupt_controller: [265, 116, 358, 161]
+  rom: [369, 116, 462, 161]
+  secondary_sram: [265, 189, 358, 234]
+  main_sram: [369, 189, 462, 234]
+  tlul_crossbar: [57, 253, 462, 314]
+  key_manager_dpe: [57, 333, 150, 378]
+  kmac: [161, 333, 254, 378]
+  entropy_complex: [261, 333, 354, 378]
+  spi_host_0: [369, 333, 462, 378]
+  otbn: [57, 397, 150, 442]
+  hmac: [161, 397, 254, 442]
+  debug_module: [265, 397, 358, 442]
+  spi_host_1: [369, 397, 462, 442]
+  aes: [57, 461, 150, 506]
+  rram: [161, 461, 254, 506]
+  i3c_controller_target: [265, 461, 358, 506]
+  usb_device: [369, 461, 462, 506]
+  # ---- earlgrey_pd_main, peripheral column left of the peri crossbar ----
+  otp_controller: [476, 116, 569, 161]
+  life_cycle_controller: [476, 189, 569, 234]
+  gpio: [476, 304, 570, 349]
+  spi_device: [476, 356, 570, 401]
+  uart_4x: [476, 409, 570, 454]
+  i2c_3x: [476, 461, 570, 506]
+  peri_tlul_crossbar: [594, 116, 664, 506]
+  # ---- earlgrey_pd_main, column right of the peri crossbar --------------
+  alert_handler: [689, 116, 782, 161]
+  timers: [689, 189, 782, 234]
+  clk_rst_managers_main: [688, 356, 781, 401]
+  pinmux_main: [688, 409, 781, 454]
+  analog_sensor_top_main: [688, 461, 781, 506]
+  # ---- earlgrey_pd_aon --------------------------------------------------
+  retention_sram: [823, 153, 916, 198]
+  sysrst_controller: [931, 153, 1024, 198]
+  sensor_control: [824, 223, 917, 268]
+  aon_timers: [931, 223, 1024, 268]
+  adc_controller: [823, 295, 916, 340]
+  power_manager: [931, 295, 1024, 340]
+  clk_rst_managers_aon: [865, 356, 959, 401]
+  pinmux_aon: [865, 409, 959, 454]
+  analog_sensor_top_aon: [865, 461, 959, 506]
+  # ---- chip level -------------------------------------------------------
+  padring: [41, 569, 1033, 606]
+labels: {}
+extras:
+  dual_lockstep_shadow: [75, 132, 244, 225]
+routes:
+  # Everything not listed here is routed automatically between the two boxes (stem through the middle of
+  # their overlap), which is what the reference draws. Entries below pin a stem the reference offsets.
+  c01: {at: 143}        # Ibex Core <-> TL-UL Crossbar, under the left half of the core
+  c09: {at: 415}        # SPI Host 0 up into the crossbar, under its own column
+  c30: {at: 175}        # Retention SRAM -> peri crossbar: long arrow above Alert Handler's row
+  c31: {at: 245}        # Sensor Control -> peri crossbar
+  c32: {at: 317}        # ADC Controller -> peri crossbar

@@ -147,11 +147,12 @@ def make_run_dir(spec_name: str, pipeline: str) -> str:
 
 
 def render_and_frames(script_path: str, scene: str, out_dir: str, timeout: int = 900):
-    """Render at -ql into out_dir, extract last frame + 3 mid-sequence keyframes. -> (ok, log, {name: path})."""
+    """Render at 1920x1080 (the standard landscape video size) into out_dir, extract the last frame + 3
+    mid-sequence keyframes. -> (ok, log, {name: path})."""
     media = os.path.join(out_dir, "media")
     env = dict(os.environ, PYTHONPATH=ROOT)
-    cmd = [sys.executable, "-m", "manim", "render", "-ql", "--progress_bar", "none", "-v", "WARNING",
-           "--media_dir", media, script_path, scene]
+    cmd = [sys.executable, "-m", "manim", "render", "--resolution", "1920,1080", "--fps", "30",
+           "--progress_bar", "none", "-v", "WARNING", "--media_dir", media, script_path, scene]
     try:
         p = subprocess.run(cmd, cwd=ROOT, env=env, capture_output=True, text=True, timeout=timeout)
     except subprocess.TimeoutExpired:

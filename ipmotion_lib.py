@@ -197,7 +197,7 @@ class GlowBox(VGroup):
 class IPBlock(PortMixin, VGroup):
     """Block with a title. ports=[{"label": "ARVALID", "edge": "RIGHT", "name": optional}] declares real,
     connectable ports (block.port("ARVALID")); _left/_right/_top/_bottom always exist as implicit ports."""
-    def __init__(self, title, theme, width=2.5, height=1.5, fill=None, stroke=None, text_color=None, dotted=False, ind=False, font="Consolas", ports=None):
+    def __init__(self, title, theme, width=2.5, height=1.5, fill=None, stroke=None, text_color=None, dotted=False, ind=False, font="Consolas", ports=None, line_spacing=0.6):
         super().__init__()
         self._init_ports()
         self.title = title
@@ -209,7 +209,7 @@ class IPBlock(PortMixin, VGroup):
         # Fallback for empty title
         if not title:
             title = " "
-        self.txt = Text(title, font=font, font_size=16, color=tc, weight=BOLD, line_spacing=0.6).move_to(self.bg)
+        self.txt = Text(title, font=font, font_size=16, color=tc, weight=BOLD, line_spacing=line_spacing).move_to(self.bg)
         
         # fixed 0.2 padding, but never below half the block (a block under 0.2 tall used to get a NEGATIVE size,
         # which rotated the title 180 degrees)

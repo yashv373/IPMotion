@@ -1,0 +1,34 @@
+# A STORY: only what should happen. The whole diagram (40 blocks, 4 regions, 40 connections) comes from
+# bench/truth/opentitan_earlgrey.yaml automatically. Ids are the ids used in that truth file.
+source: opentitan_earlgrey
+title: "Earlgrey: Ibex reads from the 4x UART"
+description: >
+  Ibex Core sends a read through the main TL-UL Crossbar and the peripheral TL-UL Cross bar to the 4x UART.
+  The response comes back over the same links.
+
+sequence:
+  - banner: "Idle: nothing is happening yet"
+  - banner: "Step 1: Ibex Core sends a read request"
+    highlight: [ibex_core]
+    activate: [c01]
+    packets: [{conn: c01, label: "Read req"}]
+  - banner: "Step 2: The TL-UL Crossbar passes it to the peripheral side"
+    highlight: [tlul_crossbar]
+    activate: [c18]
+    packets: [{conn: c18, label: "Read req"}]
+  - banner: "Step 3: The peripheral TL-UL Cross bar sends it to the 4x UART"
+    highlight: [peri_tlul_crossbar]
+    activate: [c23]
+    packets: [{conn: c23, label: "Read req"}]
+  - banner: "Step 4: The 4x UART answers"
+    highlight: [uart_4x]
+    activate: [c23]
+  - banner: "Step 5: The response travels back over the same links"
+    highlight: [peri_tlul_crossbar, tlul_crossbar]
+    activate: [c23, c18, c01]
+    packets: [{conn: c23, label: "response", kind: response}, {conn: c18, label: "response", kind: response}]
+  - banner: "Step 6: Ibex Core receives the data. Read complete"
+    highlight: [ibex_core]
+    activate: [c01]
+    packets: [{conn: c01, label: "response", kind: response}]
+    hold: 1.5

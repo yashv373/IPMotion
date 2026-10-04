@@ -43,7 +43,7 @@ def run(story_path: str, rep_no: int = 1) -> dict:
         '"""Deterministic scene: drawn from the reference notes, no AI-written code."""\n'
         "from ipmotion.player import FullDiagramScene\n\n\n"
         f"class FullStory(FullDiagramScene):\n    STORY = {abs_story!r}\n")
-    rep = lint_script(script, "FullStory", spec=spec)
+    rep = lint_script(script, "FullStory", spec=spec, layout=layout)
     C.write_json(os.path.join(adir, "lint.json"), rep)
     runtime = [i for i in rep["issues"] if i["check"] == "runtime_error"]
     lint_errs = [i for i in rep["issues"] if i["severity"] == "error" and i["check"] != "runtime_error"]
