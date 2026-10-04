@@ -20,3 +20,11 @@ for n in tree.body:
 (out / "10_library_api.txt").write_text("\n".join(lines) + "\n", encoding="utf-8")
 ex = (root / "gold_examples" / "axi_read_handshake.py").read_text(encoding="utf-8")
 (out / "20_example_axi.txt").write_text("# GOLD EXAMPLE (renders with 0 lint errors; copy its layout habits)\n" + ex, encoding="utf-8")
+
+# The big worked example: a whole 40-block chip, emitted from the engine itself, so it can never drift from what
+# the engine actually draws. Earlgrey only -- Peppermint is the held-out exam (CLAUDE.md), and Darjeeling does
+# not emit cleanly yet (its banner lands on the drawing; see docs/PROGRESS.md).
+import sys
+sys.path.insert(0, str(root))
+from ipmotion.emit import emit  # noqa: E402
+(out / "25_example_earlgrey.txt").write_text(emit("bench/stories/earlgrey_ibex_uart_read.yaml"), encoding="utf-8")

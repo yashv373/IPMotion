@@ -351,6 +351,7 @@ class Diagram(VGroup):
             n_lines = label.count("\n") + 1
             dg.txt.move_to(dg.bg.get_corner(UP + LEFT) + RIGHT * 0.12 + DOWN * (0.13 if n_lines == 1 else 0.06),
                            aligned_edge=LEFT if n_lines == 1 else UP + LEFT)
+            dg.label_wrapped = label          # the text as drawn, spaces intact (Text.text drops them)
             self.regions[r["id"]] = dg
             self.add(dg)
 

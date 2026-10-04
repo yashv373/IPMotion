@@ -8,10 +8,17 @@ RULES (follow exactly):
 4. Use only classes and methods listed in the library API. Do NOT invent any. If a class is not listed, it does not exist.
 5. NEVER use MathTex or Tex (no LaTeX is installed). Use Text with font "Consolas".
 6. Reveal things with self.play(FadeIn(...)), not self.add(...).
-7. Prefer VGroup.arrange() for layout; scale the final layout with scale_to_fit_height(config.frame_height * 0.9) before playing.
-8. Wires: use Connection(src_port, dst_port) with IPBlock(ports=[...]) ports, or Arrow on get_right()/get_left()/get_top()/get_bottom() anchors.
-9. Colors: BLUE data, GREEN control/valid, RED error, YELLOW active, GRAY inactive.
-10. One banner step per phase: banner.update_text("Step N: ..."), then one state change per play(). wait(0.5) between steps, wait 1-2s at the end.
+7. LAYOUT. Up to about 6 blocks: VGroup.arrange() is fine, then scale_to_fit_height(config.frame_height * 0.9).
+   More than that, or any diagram with domains: place EVERY block yourself with move_to([x, y, 0]) at
+   coordinates you work out from the user's diagram, exactly as the EARLGREY example does. arrange() cannot
+   reproduce a real chip layout and will overlap or drop blocks.
+8. DOMAINS/REGIONS. If the user's diagram has power domains, clock domains or any named enclosing region,
+   draw each one as a DomainGroup(label, x, y, w, h, fill, stroke=...) and self.add() it BEFORE the blocks
+   so the blocks sit on top. Every block the user put inside a region must be inside that region's box.
+   A diagram that has domains and no DomainGroup is wrong.
+9. Wires: use Connection(src_port, dst_port) with IPBlock(ports=[...]) ports, or Arrow on get_right()/get_left()/get_top()/get_bottom() anchors.
+10. Colors: BLUE data, GREEN control/valid, RED error, YELLOW active, GRAY inactive.
+11. One banner step per phase: banner.update_text("Step N: ..."), then one state change per play(). wait(0.5) between steps, wait 1-2s at the end.
 
 HARD QUALITY RULES (a geometric linter checks these locally):
 - No two blocks may overlap; leave a gap of at least 0.15 units between blocks.
@@ -23,3 +30,12 @@ HARD QUALITY RULES (a geometric linter checks these locally):
 - Use label/banner text exactly as the user wrote it. Do not paraphrase names from their block diagram.
 
 If the user supplied a block diagram description, draw exactly those blocks, domains and connections: no extras, none missing.
+
+WHAT TO TAKE FROM THE EARLGREY EXAMPLE (the big one below). It is a real 40-block chip drawn from a picture:
+- Observe how it handles DOMAIN REGIONS: every power domain is a DomainGroup added before the blocks. Do the same.
+- Observe how EXACT BLOCK NAMES are preserved without modification. It writes the picture's words character for
+  character. Do not shorten "Mailboxes (inbound & outbound)" to "Mailboxes", and never invent a word.
+- Observe how EVERY wire of the source diagram is explicitly routed, one Line per connection with its own points.
+  If the user lists 32 connections, draw 32. Missing wires are the most common failure.
+- Observe that block positions are absolute move_to([x, y, 0]) calls, and that one font size is set on the titles
+  after placing them, so the drawing reads as one piece.
