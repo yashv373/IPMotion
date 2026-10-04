@@ -25,7 +25,7 @@
 
 <h2>What the generator makes today</h2>
 <p class="note">The four above are drawn by the engine from measured positions. This one is not: it is the real output of the Generate button, given the Peppermint diagram as plain text, one try, no checking and no fixes. It gets both power domains and every block name exactly right. It also misses wires and oversizes the two domain titles. That is honestly where the one-shot generator stands today.</p>
-<div class="card"><img class="thumb" src="assets/gifs/generated-peppermint.gif" alt="Animation written by the generator in one shot" loading="lazy" onerror="this.outerHTML='<div class=ph>GIF coming</div>'"></div>
+<video class="explainer" src="assets/video/generated-peppermint.mp4" autoplay muted loop playsinline controls preload="metadata" aria-label="Animation written by the generator in one shot"></video>
 <h2 id="generator">Generator</h2>
 <div class="warn"><strong>One shot, no safety net.</strong> Your browser sends one request and shows exactly what the model sends back. Nothing checks it first: the geometric linter and the repair loop only run locally, in the full IPMotion repo. Expect to fix an overlap or a missing wire by hand, and treat this as a strong first draft rather than a finished animation.</div>
 <form id="f" class="card" onsubmit="return false">

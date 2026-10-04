@@ -64,9 +64,6 @@ body.pop-open #popbg{opacity:1}
 
 .explainer{width:100%;max-width:960px;display:block;margin:14px auto 22px;border:1px solid var(--line);border-radius:14px;background:#000;box-shadow:0 10px 40px rgba(0,0,0,.45)}
 
-details.setup summary{cursor:pointer;list-style:none;padding:2px 0}
-details.setup summary::-webkit-details-marker{display:none}
-details.setup summary::before{content:"b8 ";color:var(--accent)}
-details.setup[open] summary::before{content:"be "}
 details.setup ul.steps{margin:10px 0 6px;padding-left:20px}
 details.setup ul.steps li{margin:8px 0}
+details.setup summary{cursor:pointer;padding:2px 0;font-weight:600}

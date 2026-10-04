@@ -77,6 +77,9 @@ async function generate() {
   } finally { $("go").disabled = false; }
 }
 
+// Wiring the generator must never be able to stop the gallery below from being wired: one bad id or a
+// browser without clipboard access used to kill every line after it, including the popups.
+try {
 $("provider").value = store.get("ipm_provider") || "gemini";
 $("key").value = store.get("ipm_key");
 $("model").value = store.get("ipm_model");
@@ -94,6 +97,7 @@ $("dl").onclick = () => {
   a.href = URL.createObjectURL(new Blob([$("code").textContent], { type: "text/x-python" }));
   a.download = "script.py"; a.click(); URL.revokeObjectURL(a.href);
 };
+} catch (err) { console.error("IPMotion: generator wiring failed", err); }
 
 // Example gallery: hover (mouse) or tap (touch) a card to open its detail window; leave or tap away to close.
 {
