@@ -38,6 +38,9 @@
 <h2>8. Two generation modes</h2>
 <p><strong>v3 (this website):</strong> the model writes a whole Manim script against the library. <strong>v4 (local):</strong> code draws the whole diagram from truth + layout, and only the story varies, so the diagram is deterministic.</p>
 
+<h2>Future direction: sequential improvement</h2>
+<p>Today the website is a single shot: one request, one script, no checking. The repair loop in step 7 exists only in the local benchmark harness. The direction for IPMotion is to put that loop behind the Generate button, so what you download has already been rendered, measured and corrected a few times rather than handed over unexamined.</p>
+<p>Until then the same loop is available to you by hand: run <code>python -m ipmotion.lint script.py</code> for a precise list of what is wrong, and give that list plus the script to any chat assistant to revise. The output is ordinary Manim code, so nothing about it is locked to us.</p>
 <h2>What this website does</h2>
 <p>Context stuffing: it fetches five static text files &mdash; the rules, the library API, a small verified gold example, a full worked example of a real 40-block chip, and input notes &mdash; appends your story and diagram text, and sends one request from your browser to your provider. <strong>No lint, no conformance check and no repair loop run here.</strong> Run <code>python -m ipmotion.lint script.py</code> locally to get them.</p>
 <p><a class="btn" href="index.html#generator">Try the generator</a></p>

@@ -48,7 +48,15 @@ pip install "manim==0.21.0"
 manim -pql script.py YourSceneName
 # optional geometric check:
 python -m ipmotion.lint script.py</pre>
-<p class="note">Replace <code>YourSceneName</code> with the class name in the script. No LaTeX needed. Use <code>-qh</code> for a sharper render.</p></div></section>
+<p class="note">Replace <code>YourSceneName</code> with the class name in the script. No LaTeX needed. Use <code>-qh</code> for a sharper render.</p></div><div class="setup"><h3>Not happy with the first result? Keep going.</h3>
+<p>This is one shot with no checking, so a first draft is normal. You do not have to start again:</p>
+<ol class="steps">
+<li><strong>Ask any chat assistant to fix it.</strong> The file is ordinary Manim code, so paste it into ChatGPT, Claude, Gemini or whichever you already pay for, and say what is wrong in plain words &mdash; "two blocks overlap", "the UART arrow is missing", "make the title smaller". Then run it again.</li>
+<li><strong>Let the checker tell you what is wrong first.</strong> In the repo, run <code>python -m ipmotion.lint script.py</code>. It lists overlapping text, labels too small to read, wires ending in empty space and anything outside the frame. Paste that list in with the script and the assistant has something precise to work from.</li>
+<li><strong>Change your input, not just the script.</strong> Most misses come from the diagram text. Add the connection it skipped, or write a name exactly as you want it drawn, and generate again.</li>
+</ol>
+<p class="note"><strong>Where this is going.</strong> That back-and-forth is something IPMotion should do for you, not something you should have to drive. The generate &rarr; check &rarr; repair loop already runs locally in the repo; bringing it into this page, so the site hands you a script it has already checked and corrected a few times, is the next direction for IPMotion.</p></div>
+</section>
 <h2 id="setup">Set up your computer</h2>
 <p class="note">One-time setup, about 15 minutes. You need Python, FFmpeg (turns frames into a video), Git and Manim. Nothing here needs LaTeX.</p>
 <ol class="steps">

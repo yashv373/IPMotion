@@ -374,3 +374,21 @@ as a deliberate re-baseline, not quietly.
 - The "one shot" warning now says to treat the output as a strong first draft.
 - Removed the internal "v4 pivot" changelog row (meaningless to a visitor) and added a plain-words row for this
   RAG work.
+
+## Future direction recorded: sequential improvement (2026-10-04)
+
+The user's framing: the website gives a good FIRST animation; if it needs more, the visitor can take the script
+to any chat assistant, and later IPMotion should do that refining itself.
+
+Written onto the site rather than left as a plan:
+- index.html, with the generated script: "Not happy with the first result? Keep going." Three concrete moves --
+  paste the script into any chat assistant and say what is wrong in plain words; run
+  `python -m ipmotion.lint script.py` first so the assistant gets a precise list; or fix the diagram text, since
+  most misses come from the input. Followed by a plain statement that this back-and-forth is work IPMotion
+  should be doing for the visitor, and that bringing the local generate -> check -> repair loop into the page is
+  the next direction.
+- how-it-works.html gains a "Future direction: sequential improvement" section saying the same thing against the
+  pipeline description, and noting the output is ordinary Manim code so nothing is locked to us.
+
+Deliberately not claimed: that the repair loop runs in the browser. It does not. It exists in the local
+benchmark harness only, and both pages say so.
