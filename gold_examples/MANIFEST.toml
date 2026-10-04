@@ -65,3 +65,10 @@ scene = "SystolicArrayMac"
 lint_role = "baseline"
 reason = "Renders with 0 lint errors and 0 warnings. The first gold example that is not a floorplan: it teaches loop-generated repeated blocks, computed grid coordinates, and several blocks animating in one play() call."
 notes = "Structure cited in docs/SOURCES.md (Kung & Leiserson 1978; Jouppi et al. ISCA 2017). Added 2026-10-05."
+
+[files."mesi_cache_fsm.py"]
+status = "indexable"
+scene = "MesiCacheFsm"
+lint_role = "baseline"
+reason = "Renders with 0 lint errors and 0 warnings. The only gold example that is a state machine rather than a floorplan: circular nodes carrying their own labels, curved transitions whose labels are placed from the arc's own perpendicular, and a self-loop."
+notes = "Protocol cited in docs/SOURCES.md (Papamarcos & Patel, ISCA 1984). Added 2026-10-05."

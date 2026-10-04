@@ -22,6 +22,7 @@ OpenTitan is licensed under Apache-2.0: https://github.com/lowRISC/opentitan/blo
 | Example | Structure | Citation |
 |---|---|---|
 | `systolic_array_mac.py` | 4x4 output-stationary systolic MAC array | H.T. Kung and C.E. Leiserson, "Systolic Arrays (for VLSI)", Sparse Matrix Proceedings, 1978. N.P. Jouppi et al., "In-Datacenter Performance Analysis of a Tensor Processing Unit", ISCA 2017. |
+| `mesi_cache_fsm.py` | MESI cache-coherence state machine | M.S. Papamarcos and J.H. Patel, "A Low-Overhead Coherence Solution for Multiprocessors with Private Cache Memories", ISCA 1984. Hennessy & Patterson, "Computer Architecture: A Quantitative Approach", multiprocessor cache-coherence chapter. |
 | `axi_read_handshake.py` | AXI4 read address / read data handshake | ARM, "AMBA AXI and ACE Protocol Specification" (AXI4), sections on the AR and R channels. |
 
 ## What is ours
