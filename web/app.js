@@ -97,7 +97,11 @@ $("dl").onclick = () => {
 
 // Example gallery: hover (mouse) or tap (touch) a card to open its detail window; leave or tap away to close.
 {
-  const touch = matchMedia("(hover: none)").matches;
+  // "(hover: none)" asks about the PRIMARY pointer. A Windows laptop with a touchscreen can report the
+  // primary pointer as touch even with a mouse plugged in, and the hover handlers below were then never
+  // wired up at all. "(any-hover: hover)" is true when ANY attached device can hover, so a hybrid machine
+  // keeps its hover. Click works everywhere regardless, so a wrong answer here can no longer kill the popups.
+  const touch = !matchMedia("(any-hover: hover)").matches;
   const cards = [...document.querySelectorAll(".ex")];
   const setOpen = (c, on) => { c.classList.toggle("open", on); c.setAttribute("aria-expanded", on); document.body.classList.toggle("pop-open", cards.some((x) => x.classList.contains("open"))); };
   const closeAll = (except) => cards.forEach((c) => c !== except && setOpen(c, false));
@@ -107,7 +111,8 @@ $("dl").onclick = () => {
     c.addEventListener("mouseleave", () => { if (touch) return; t = setTimeout(() => setOpen(c, false), 320); });
     c.addEventListener("click", (e) => {
       if (e.target.closest(".popx")) return setOpen(c, false);
-      if (!touch || e.target.closest(".pop")) return;
+      if (e.target.closest(".pop")) return;          // clicks inside an open window do nothing
+      clearTimeout(t);                                // a click always toggles, on any device
       closeAll(c); setOpen(c, !c.classList.contains("open"));
     });
     c.addEventListener("keydown", (e) => {
