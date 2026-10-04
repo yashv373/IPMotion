@@ -6,6 +6,7 @@
 | M1 | A (port API) + C (geometric lint) + tests | **Done** (2026-10-03) |
 | M1.5 | End-to-end benchmark (spec -> animation), v2 vs v3 | **In progress**: Darjeeling run done, others pending |
 | M1.6 | Whole-diagram polish + a second chip (Earlgrey) on the same engine | **Done** (2026-10-04) |
+| M1.7 | Third chip (Peppermint) on the same engine | **In progress** (2026-10-04): it draws; 4 known problems open |
 | M2 | B (STYLE.md + style.toml layout conventions) | Next |
 | M3 | F (LLM layer) + G (run logging) | Pending |
 | M4 | E (ordered repair loop) | Pending |
@@ -139,3 +140,88 @@ Whole suite: 181 passing.
 **Known limits unchanged:** the numbers compare the drawing with the hand-written notes of the picture, not with
 the picture; Peppermint has truth but no layout file yet; the vision transcription and the LLM story step are
 still not built.
+
+## M1.7 third chip: Peppermint (2026-10-04) -- IN PROGRESS, left half-finished
+
+Goal (user, option A of three): put a third chip through the same whole-diagram engine, to find out what the
+M1.6 polish had quietly tuned to Darjeeling and Earlgrey. Peppermint already had a truth file but no layout
+file. Nothing is committed yet; the working tree holds everything below.
+
+**New files (done)**
+- `bench/truth/opentitan_peppermint.layout.yaml`: 24 block boxes, 3 region boxes and 9 edge-label boxes, all
+  detected from the reference image rather than guessed. One connected region per fill colour (outer gray
+  239,239,239; the two domain boxes 217,217,217; main-domain blocks 188,216,167; AON blocks 119,169,76; the
+  lockstep shadow 156,197,123); the nine edge labels are the bounding boxes of their black text. `routes` is
+  still empty: every wire is routed automatically.
+- `bench/stories/peppermint_ibex_retention_read.yaml` + `bench/scenes/peppermint_ibex_retention_read.py`:
+  "Ibex reads from the Retention SRAM", a 6-step story that crosses from the main domain into the always-on one.
+
+**What the third chip exposed, and what was changed for it (all in shared code, additive)**
+- *No legend at all.* Peppermint's truth file records `fill: light green / dark green` instead of a
+  `fill_legend:` entry, because the picture explains nothing. `diagram.py` now falls back to `fill`, has colours
+  for those two names, and the legend panel prints "Drawing notes:" with no colour list instead of an empty
+  "Clock speed (fill color):" heading.
+- *A box with no label.* The AON domain has a small symbol the picture never names. `conformance.py` no longer
+  looks for text that is not printed, the extras check no longer calls that box an intruder, and
+  `spec_validator.py` accepts `label: null` on a full-diagram spec.
+- *Edge labels on three sides.* Darjeeling only ever had labels in the left margin, and the M1.6 gutter code
+  assumed it. Peppermint prints them left, bottom and right. Labels now also keep the reference's own place on
+  the other two sides, are given one common font size, sit against the edge that faces the drawing, and are kept
+  clear of the step panel, not just the frame edge.
+- *Region titles wider than their own box.* The AON title is long and its box is narrow. A nested title is now
+  broken over lines, as the reference does, instead of being shrunk until it cannot be read; the outermost title
+  is still shrunk, which keeps it on one line as the picture has it.
+- `label_chars` in the layout file gives each edge label the reference's own line breaks.
+
+**Where it stands (last full run: `python bench/run_full.py bench/stories/peppermint_ibex_retention_read.yaml`)**
+- 33/33 blocks, 3/3 regions, 32/32 sure wires, 100% order agreement, 3 unconfirmed.
+- 2 extras, 4 conformance errors, 2 lint errors -- all four causes are known and listed below.
+- A single frame renders and reads close to the reference.
+
+**The four problems left open (none of them guesses; each was reproduced)**
+1. **Darjeeling regression, must be fixed first.** The new "is this label in the left gutter?" test is
+   `box[2] > drawing_left`, and Darjeeling's drawing starts at x=8 while its label boxes end at x=90/62/62, so
+   all three are now treated as right/bottom labels. Measured: they drop from 12pt to the 9pt floor and sit on
+   the drawing's left edge instead of in their gutter. That undoes part of the M1.6 margin-label polish. Fix:
+   classify by side properly -- right if `box[0] >= drawing_right`, bottom if `box[1] >= drawing_bottom`, else
+   left (which keeps Darjeeling's behaviour exactly) -- and use that one test in both `_margin_boxes` and
+   `_place_labels`.
+2. **The step panel is too narrow on Peppermint, which is what clips the legend line** (`out_of_frame` on
+   "amber dashed line: not sure (see report)"). `_margin_boxes()` is called twice at two different scales: once
+   with the height-fit scale, where the labels do not overhang and the gutter is 0.06, and once with the final
+   scale, where the gutter is about 0.55. The panel is sized from the first and placed from the second.
+   Measured panel widths: Darjeeling 6.86, Earlgrey 4.80, Peppermint 4.26 against a 4.8 minimum. Fix: settle
+   the scale and the gutter together (2-3 rounds) and use the same gutter for both. Add a test that the panel
+   is never narrower than `MIN_PANEL_W` on all three chips -- it would have caught this.
+3. **The unlabeled symbol has no box, so its two wires are reported wrong** (c25/c26 "an end block is not
+   drawn", plus the same two wires counted as extras). Cause: skipping label-less blocks in
+   `conformance.locate_blocks` also skipped giving them a position. Fix: pair label-less spec blocks with the
+   drawn boxes that own no text, in reference order, the same way blocks that share a name are paired; then
+   have the extras check skip the boxes that were paired, instead of counting them.
+4. **One wire runs through the "Debug module interface (DMI)" label** (`text_overlap`). Two causes:
+   `label_chars: 14` breaks "interface (DMI)" (15 characters) onto a third line the reference does not have,
+   and the automatic stem for c23 lands at x=468 where the grown text now reaches. Fix: `label_chars: 15`, and
+   hand-read `routes` for c23 and c24 that follow the reference's fork, kept more than the 0.06-unit join
+   tolerance apart so the checker does not read them as one wire.
+
+**Also worth the user's eye before this is called done**
+- The unlabeled symbol is drawn as a rounded pill; the reference shows a square with a white up-triangle. A
+  special case like the Ibex lockstep shadow would match it.
+- All nine edge labels land on the new 9pt floor (`MARGIN_LABEL_MIN`), because the detected boxes are tight to
+  the glyphs. 9pt was chosen so the bottom row does not collide; it is a floor, not a measurement.
+- Two choices made here that the session rules say to ask about: the validator now accepts `label: null` on a
+  full-diagram spec, and the legend wording "dashed box: the picture does not say" for a diagram with no legend.
+
+**Verification state, honestly**
+- `pytest -q`: 181 passed, but that run started before the last three edits, so it does **not** cover the tree
+  as it stands. It must be re-run.
+- Darjeeling and Earlgrey have **not** been re-run since these changes. Both must go through `run_full.py` again
+  and match their recorded numbers exactly (Darjeeling 49/49, 4/4, 53/53, 0 extras, 100%, 12 unconfirmed, 0+0
+  errors; Earlgrey 40/40, 4/4, 39/39, 0 extras, 100%, 1 unconfirmed, 0+0 errors) before any of this is kept.
+- No tests have been written for Peppermint yet. Planned: add it to the frame/panel and no-wire-over-a-block
+  tests in `tests/test_earlgrey_diagram.py` (not to the swatch test, which needs a chip that has swatches), plus
+  a story-clean test and the panel-width test from problem 2.
+- `bench/report.html` has not been rebuilt, so it does not show Peppermint yet.
+
+**Next session, in order:** problem 1, then 2, then 3, then 4; re-run all three chips; write the tests;
+`python bench/make_report.py`; commit.

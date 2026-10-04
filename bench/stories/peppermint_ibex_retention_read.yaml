@@ -1,0 +1,34 @@
+# A STORY: only what should happen. The whole diagram (24 blocks, 9 edge labels, 3 regions, 34 connections)
+# comes from bench/truth/opentitan_peppermint.yaml automatically. Ids are the ids used in that truth file.
+source: opentitan_peppermint
+title: "Peppermint: Ibex reads from the Retention SRAM"
+description: >
+  Ibex Core sends a read through the Main TL-UL Crossbar and the AON TL-UL Cross bar to the Retention SRAM in
+  the always-on domain. The response comes back over the same links.
+
+sequence:
+  - banner: "Idle: nothing is happening yet"
+  - banner: "Step 1: Ibex Core sends a read request"
+    highlight: [ibex_core]
+    activate: [c01]
+    packets: [{conn: c01, label: "Read req"}]
+  - banner: "Step 2: The Main TL-UL Crossbar passes it to the always-on side"
+    highlight: [main_tlul_crossbar]
+    activate: [c07]
+    packets: [{conn: c07, label: "Read req"}]
+  - banner: "Step 3: The AON TL-UL Cross bar sends it to the Retention SRAM"
+    highlight: [aon_tlul_crossbar]
+    activate: [c31]
+    packets: [{conn: c31, label: "Read req"}]
+  - banner: "Step 4: The Retention SRAM answers"
+    highlight: [retention_sram]
+    activate: [c31]
+  - banner: "Step 5: The response travels back over the same links"
+    highlight: [aon_tlul_crossbar, main_tlul_crossbar]
+    activate: [c31, c07, c01]
+    packets: [{conn: c31, label: "response", kind: response}, {conn: c07, label: "response", kind: response}]
+  - banner: "Step 6: Ibex Core receives the data. Read complete"
+    highlight: [ibex_core]
+    activate: [c01]
+    packets: [{conn: c01, label: "response", kind: response}]
+    hold: 1.5

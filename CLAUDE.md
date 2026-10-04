@@ -23,6 +23,7 @@ Read docs/PHASE0_FINDINGS.md and docs/PROGRESS.md at session start. Don't re-exp
 - Render scratch output outside the project root.
 
 ## Token hygiene
+- For codebase questions, check graphify-out/GRAPH_REPORT.md or run `graphify query "<question>"` before opening files. Don't rebuild the graph unless asked; use `graphify . --update` after big changes.
 - Read only the files and line ranges you need; don't cat whole files.
 - Summarize tool output; never paste raw logs or full lint dumps.
 

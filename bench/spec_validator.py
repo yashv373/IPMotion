@@ -50,7 +50,8 @@ def validate(spec: dict) -> list[str]:
     for b in blocks:
         if b.get("role") not in ROLES:
             errs.append(f"block {b.get('id')!r}: role {b.get('role')!r} not in {sorted(ROLES)}")
-        if not b.get("label"):
+        if not b.get("label") and "label" not in b:
+            # a full-diagram spec may carry label: null for a box the reference draws with no text
             errs.append(f"block {b.get('id')!r}: label is required")
 
     dom_parent = {d.get("id"): d.get("parent") for d in spec.get("domains") or []}

@@ -28,6 +28,8 @@ FILL = {   # legend label -> (stroke, fill)  (colors are ours; only the grouping
     # earlgrey / others
     "~150 MHz (target)": ("#60A5FA", "#0F2238"), "96 MHz": ("#3B82F6", "#0B1B33"), "48 MHz": ("#F472B6", "#33121F"),
     "24 MHz": ("#34D399", "#0F2A22"), "200 kHz": ("#FDBA74", "#33220F"), "Logic only": ("#9CA3AF", "#22262C"),
+    # peppermint has no legend at all: the truth file records the fill as drawn
+    "light green": ("#34D399", "#0F2A22"), "dark green": ("#22D3EE", "#0E2A33"),
 }
 MARKER = {"orange": "#F59E0B", "purple": "#A78BFA", "peach": "#FDBA74", "blue": "#3B82F6", "pink": "#F472B6"}
 UNCONFIRMED = "#F59E0B"
@@ -35,6 +37,7 @@ TEXT_PAD_W, TEXT_PAD_H = 0.88, 0.80      # share of a block's box its title may 
 MAX_BLOCK_FONT = 14.0                     # a big block does not get huge text; everything reads as one size
 MARGIN_LABEL_FONT = 12.0                  # free labels in the left margin ("DMA System Egress")
 MARGIN_LABEL_CHARS = 11                   # ...broken to about this many characters a line
+MARGIN_LABEL_MIN = 9.0                    # ...and never smaller than this, however tight the reference box is
 LINE_SPACING = 0.25                       # block titles: tight lines, so a 3-line title stays readable
 FRAME_MARGIN = 0.16                       # nothing is drawn closer than this to the edge of the frame
                                           # (over the linter's 0.15 safe margin)
@@ -196,12 +199,14 @@ class Diagram(VGroup):
         """Margin labels ("DMA System Egress") sit in the strip left of the drawing. Break them to a readable
         line length up front, so the strip can be made exactly as wide as they need."""
         out = {}
+        chars = self.layout.get("label_chars", {})
         for e in self.truth.get("externals", []):
             if e["id"] in self.layout.get("labels", {}):
+                limit = chars.get(e["id"], MARGIN_LABEL_CHARS)      # per label: the reference's own line breaks
                 words, lines, cur = e["label"].split(), [], ""
                 for word in words:
                     cand = (cur + " " + word).strip()
-                    if cur and len(cand) > MARGIN_LABEL_CHARS:
+                    if cur and len(cand) > limit:
                         lines.append(cur)
                         cur = word
                     else:
@@ -215,6 +220,11 @@ class Diagram(VGroup):
         return min([b[0] for b in self.layout["blocks"].values()] +
                    [r[0] for r in self.layout["regions"].values()])
 
+    def _drawing_right(self) -> float:
+        """Rightmost pixel of anything drawn from the reference."""
+        return max([b[2] for b in self.layout["blocks"].values()] +
+                   [r[2] for r in self.layout["regions"].values()])
+
     def _margin_boxes(self) -> float:
         """Give each margin label the pixel box its text really needs, keeping the right edge where the
         reference put it (that is where its wire arrives). -> how far the widest one reaches left of the
@@ -225,6 +235,10 @@ class Diagram(VGroup):
             self._label_boxes0 = {k: list(v) for k, v in self.layout.get("labels", {}).items()}
         for lid, wrapped in self._margin_wraps.items():
             box = self._label_boxes0[lid]
+            if box[2] > self._drawing_left():
+                # Not in the left gutter: Peppermint also prints labels at the bottom and right edges. The
+                # reference image already leaves room for those, so they keep the box the picture gave them.
+                continue
             lines = wrapped.split("\n")
             w = max(len(l) for l in lines) * cw * MARGIN_LABEL_FONT / self.u          # in image pixels
             h = ((len(lines) - 1) * pitch + gh) * MARGIN_LABEL_FONT / self.u
@@ -261,10 +275,22 @@ class Diagram(VGroup):
             d = depth_of(r["id"])
             fill, stroke, sw = region_style[min(d, 2)]
             dg = DomainGroup(r["label"], cx, cy, w, h, fill, stroke=stroke)
+            scale, label = 0.5 if d == 0 else 11 / 24, r["label"]
+            if d > 0 and dg.txt.width * scale > w - 0.24:
+                # a nested title wider than its own box (Peppermint's AON domain): break it over lines, as the
+                # reference does, instead of shrinking it until it cannot be read. The outermost title spans the
+                # whole drawing, so it is only shrunk (below), which keeps it on one line as the reference has it.
+                per = dg.txt.width * scale / max(len(label), 1)
+                label = "\n".join(textwrap.wrap(label, max(8, int((w - 0.24) / per))))
+                dg = DomainGroup(label, cx, cy, w, h, fill, stroke=stroke)
             dg.bg.set_stroke(stroke, sw)
             # smaller title, kept inside the top-left corner
-            dg.txt.scale(0.5 if d == 0 else 11 / 24)
-            dg.txt.move_to(dg.bg.get_corner(UP + LEFT) + RIGHT * 0.12 + DOWN * 0.13, aligned_edge=LEFT)
+            dg.txt.scale(scale)
+            if dg.txt.width > w - 0.24:                 # still too wide (one very long word): shrink to fit
+                dg.txt.scale((w - 0.24) / dg.txt.width)
+            n_lines = label.count("\n") + 1
+            dg.txt.move_to(dg.bg.get_corner(UP + LEFT) + RIGHT * 0.12 + DOWN * (0.13 if n_lines == 1 else 0.06),
+                           aligned_edge=LEFT if n_lines == 1 else UP + LEFT)
             self.regions[r["id"]] = dg
             self.add(dg)
 
@@ -294,7 +320,7 @@ class Diagram(VGroup):
         if h < 0.2:                       # a nested sliver (Base Addr Translation): a little taller so the text can be read
             cy += (0.26 - h) / 2           # grow upward so the box stays inside its parent
             h = 0.26
-        legend = b.get("fill_legend")
+        legend = b.get("fill_legend") or b.get("fill")      # no legend in the picture -> the fill as drawn
         stroke, fill = FILL.get(legend, ("#9CA3AF", "#1B1F26"))
         attrs = b.get("attributes", [])
         if "blue_outline" in attrs:
@@ -310,7 +336,7 @@ class Diagram(VGroup):
         right_strip = strip if any(corners[i % 4][1] is LEFT for i in range(len(marks))) else 0.0
         tw, thh = w * TEXT_PAD_W - left_strip - right_strip, h * TEXT_PAD_H
         text_dx = (left_strip - right_strip) / 2
-        wrapped = wrap_label(b["label"], tw, thh)
+        wrapped = wrap_label(b["label"] or "", tw, thh)
         blk = IPBlock(wrapped, th, width=w, height=h, fill=fill, stroke=stroke, text_color=th.text,
                       line_spacing=LINE_SPACING)
         blk.move_to([cx, cy, 0])
@@ -323,7 +349,8 @@ class Diagram(VGroup):
             blk.add(outline)
         if "blue_outline" in attrs:
             blk.bg.box.set_stroke(BLUE_OUTLINE, 3)
-        self._pending_fit.append((blk, tw, thh, text_dx))
+        if wrapped.strip():          # an unlabeled box has no text to size (and empty Text has no font_size)
+            self._pending_fit.append((blk, tw, thh, text_dx))
         blk.has_markers = bool(marks)
         for i, m in enumerate(marks):
             corner, inx, iny = corners[i % 4]
@@ -397,13 +424,28 @@ class Diagram(VGroup):
         """Free labels in the margin (e.g. "DMA System Egress"). They grow leftwards out of the drawing, into
         the gutter kept for them, and are then nudged back inside the frame if they still stick out."""
         half_w, half_h = config.frame_width / 2, config.frame_height / 2
+        # One size for all of them, as the block titles do. A gutter label was given a box that fits
+        # MARGIN_LABEL_FONT; a label that keeps the reference's own box (Peppermint prints them along the bottom
+        # and right edges too) only has the room the picture gave it, so the tightest box sets the size for all.
+        size = min([MARGIN_LABEL_FONT] + [fit_size(self._margin_wraps[e["id"]].splitlines(),
+                                                   *self._box(self.layout["labels"][e["id"]])[2:])
+                                          for e in self._pending_labels])
+        size = max(size, MARGIN_LABEL_MIN)       # readability floor; the linter reports it if they then collide
         for e in self._pending_labels:
             cx, cy, w, h = self._box(self.layout["labels"][e["id"]])
-            t = Text(self._margin_wraps[e["id"]], font="Consolas", font_size=MARGIN_LABEL_FONT,
-                     color=self.theme.text, line_spacing=LINE_SPACING)
+            wrapped = self._margin_wraps[e["id"]]
+            t = Text(wrapped, font="Consolas", font_size=size, color=self.theme.text, line_spacing=LINE_SPACING)
             t.move_to([cx, cy, 0])
+            # sit against the edge of the box that faces the drawing, so the label meets its own arrow instead
+            # of floating in the middle of the room reserved for it
+            left_px, right_px = self._label_boxes0[e["id"]][0], self._label_boxes0[e["id"]][2]
+            if right_px <= self._drawing_left():
+                t.align_to([cx + w / 2, cy, 0], RIGHT)
+            elif left_px >= self._drawing_right():
+                t.align_to([cx - w / 2, cy, 0], LEFT)
+            right_edge = min(half_w - FRAME_MARGIN, self._panel_x0 - 0.1)      # never under the step panel
             dx = max(0.0, (-half_w + FRAME_MARGIN) - t.get_left()[0])
-            dx -= max(0.0, t.get_right()[0] - (half_w - FRAME_MARGIN))
+            dx -= max(0.0, t.get_right()[0] - right_edge)
             dy = max(0.0, (-half_h + FRAME_MARGIN) - t.get_bottom()[1])
             dy -= max(0.0, t.get_top()[1] - (half_h - FRAME_MARGIN))
             t.shift(RIGHT * dx + UP * dy)
@@ -565,14 +607,17 @@ class Diagram(VGroup):
         th = self.theme
         items = VGroup()
         y = -0.85
-        lines = [("Clock speed (fill color):", None)]
+        fills = []
         for e in self.truth.get("legend", []):
             if e["swatch"].endswith("fill"):
                 word = e["swatch"].split()[0]
-                lines.append((e["label"], FILL[e["label"]][0] if e["label"] in FILL else MARKER.get(word, "#9CA3AF")))
+                fills.append((e["label"], FILL[e["label"]][0] if e["label"] in FILL else MARKER.get(word, "#9CA3AF")))
+        # a picture with no legend (Peppermint) explains nothing about its colours: don't invent a meaning
+        lines = [("Clock speed (fill color):", None)] + fills if fills else [("Drawing notes:", None)]
         attrs = {a for b in self.truth["blocks"] for a in b.get("attributes", [])}
         if "dashed_outline" in attrs or any(e.get("id") for e in self.truth.get("externals", [])):
-            lines.append(("dashed box: not fully implemented yet", "#9CA3AF"))
+            lines.append(("dashed box: not fully implemented yet" if fills else
+                          "dashed box: the picture does not say", "#9CA3AF"))
         if "blue_outline" in attrs:
             lines.append(("blue outline: new in rev2", BLUE_OUTLINE))
         if self.unconfirmed or any("unclear" in b for b in self.truth["blocks"]):

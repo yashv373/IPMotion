@@ -30,7 +30,8 @@ def labels_and_banners(spec: dict) -> tuple[dict, list]:
     if spec.get("title"):
         labels["title"] = spec["title"]
     for b in spec.get("blocks") or []:
-        labels[b["id"]] = b["label"]
+        if b.get("label"):                     # the reference prints no label on some boxes (an unexplained symbol)
+            labels[b["id"]] = b["label"]
     for d in spec.get("domains") or []:
         labels[f"domain_{d['id']}"] = d["label"]
     for c in spec.get("connections") or []:
@@ -200,7 +201,8 @@ def locate_blocks(snaps: list, spec: dict, layout: dict | None = None):
     block_box: dict[str, list] = {}
     by_label: dict[str, list] = {}
     for b in spec.get("blocks") or []:
-        by_label.setdefault(_norm(b["label"]), []).append(b)
+        if b.get("label"):                     # nothing to look for: an unlabeled box is matched by position only
+            by_label.setdefault(_norm(b["label"]), []).append(b)
     for _norm_label, group in by_label.items():
         found = candidates(group[0]["label"])
         if not found:
@@ -233,9 +235,13 @@ def check_dynamic(result: dict, spec: dict, layout: dict | None = None) -> list[
 
     # blocks drawn that the spec does not have
     want = {_norm(v) for v in labels.values()} | {_norm(b) for b in banners}
+    blank = sum(1 for b in spec.get("blocks") or [] if not b.get("label"))   # boxes the reference draws with no text
     for u in rich["units"]:
         if u["kind"] == "block" and not u.get("transient"):
             own = [t for t in rich["units"] if t["kind"] == "text" and t.get("owner") == u["id"]]
+            if not own and blank:
+                blank -= 1
+                continue
             if not any(_norm(t.get("text", "")) in want for t in own):
                 issues.append(_issue("conformance_extra", f"block {u['name']!r} at {u['bbox']} is not in the spec"
                                      + (f" (text: {own[0]['text']!r})" if own else "")))

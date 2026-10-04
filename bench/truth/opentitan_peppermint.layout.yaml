@@ -1,0 +1,62 @@
+# LAYOUT for opentitan_peppermint.yaml: where things are on the reference image (pixels). Never indexed, never in prompts.
+source_image: opentitan_archs/peppermint.png
+image_size: [951, 548]
+note: 'Pixel boxes detected from the reference image fills (one connected region per fill colour: outer gray
+  239,239,239; the two domain boxes 217,217,217; main-domain blocks 188,216,167; AON blocks 119,169,76; the
+  lockstep shadow 156,197,123). The nine edge labels are the bounding boxes of their black text. Units: image pixels.'
+regions:
+  outer: [125, 6, 825, 510]
+  main: [141, 50, 579, 496]
+  aon: [588, 50, 807, 496]
+blocks:
+  # ---- Main power and clock domain --------------------------------------
+  ibex_core: [161, 97, 337, 183]
+  interrupt_controller: [364, 97, 459, 143]
+  rom: [468, 97, 563, 143]
+  otp_fuse_controller: [364, 161, 459, 207]
+  main_sram: [468, 161, 563, 207]
+  main_tlul_crossbar: [157, 224, 563, 286]
+  otbn: [157, 304, 252, 350]
+  kmac: [260, 304, 355, 350]
+  hmac: [364, 304, 459, 350]
+  key_manager_dpe: [468, 304, 563, 350]
+  entropy_source_csrng_edn: [157, 368, 355, 414]
+  aes: [364, 368, 459, 414]
+  timers: [468, 368, 563, 414]
+  dma: [157, 432, 252, 478]
+  mailboxes: [260, 432, 355, 478]
+  debug_module: [364, 432, 459, 478]
+  life_cycle_controller: [468, 432, 563, 478]
+  # ---- Always-On (AON) power and clock domain ---------------------------
+  aon_tlul_crossbar: [608, 97, 678, 414]
+  alert_handler: [696, 97, 790, 143]
+  power_manager: [696, 166, 790, 212]
+  reset_manager: [696, 237, 790, 283]
+  clock_manager: [696, 303, 790, 349]
+  retention_sram: [696, 368, 790, 414]
+  unlabeled_symbol: [730, 436, 759, 475]
+labels:
+  # Text printed outside the outer region: left, bottom and right edges. Each keeps the place the reference
+  # gave it; `label_chars` reproduces the reference's own line breaks.
+  memory_bus_egress: [8, 212, 124, 238]
+  noise_source_bits: [8, 375, 112, 384]
+  memory_bus_ingress: [161, 514, 284, 539]
+  outbound_message_irq: [320, 511, 410, 544]
+  debug_module_interface: [477, 516, 567, 543]
+  alerts_from_soc: [842, 103, 933, 112]
+  power_handshake: [827, 173, 937, 193]
+  soc_cpu_reset: [848, 244, 937, 263]
+  life_cycle_function_control: [836, 421, 937, 457]
+label_chars:
+  memory_bus_egress: 17
+  noise_source_bits: 17
+  memory_bus_ingress: 18
+  outbound_message_irq: 11
+  debug_module_interface: 14
+  alerts_from_soc: 15
+  power_handshake: 15
+  soc_cpu_reset: 13
+  life_cycle_function_control: 16
+extras:
+  dual_lockstep_shadow: [166, 121, 349, 207]
+routes: {}
