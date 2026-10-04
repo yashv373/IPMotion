@@ -8,6 +8,8 @@
 <div id="popbg" aria-hidden="true"></div><main class="wrap">
 <section class="hero"><h1>How it works</h1><p>IPMotion treats a diagram animation as something a program can measure. A model proposes; geometry and a renderer check. This page describes the full local pipeline, and what this website skips.</p></section>
 
+<video class="explainer" src="assets/video/how-ipmotion-works.mp4" autoplay muted loop playsinline controls preload="metadata" aria-label="How IPMotion works, animated"></video>
+<p class="note">That explainer was made by IPMotion itself, against the same library the generator writes against, and checked by the same linter: 0 errors, 0 warnings.</p>
 <h2>1. Source of truth</h2>
 <p>Architecture facts come from hand-transcribed <strong>truth files</strong> (YAML: blocks, domains, connections, fills), never from a model's memory. A <strong>layout file</strong> adds pixel boxes detected from the reference picture's fill colours, plus hand-read wire routes. Two of these chips (Earlgrey, Darjeeling) are now turned into full worked example scripts that the generator reads, so it has a blueprint rather than a guess. A third, Peppermint, is deliberately held back and never put in a prompt, so scoring the generator against it stays an honest exam.</p>
 
