@@ -82,3 +82,27 @@ def test_darjeeling_full_reports_block_overlap_and_occlusion():
 def test_previously_rendering_gold_examples_still_run(name):
     rep = lint_file(os.path.join(GOLD, f"{name}.py"))
     assert not [i for i in rep["issues"] if i["check"] == "runtime_error"]
+
+
+# ------------------------------------------------- every baseline, from the manifest
+# MANIFEST.toml says lint_role = "baseline" means "must lint with zero errors". That was documentation and
+# nothing checked it, so a change to ipmotion_lib could quietly break the very files the generator learns from.
+# Reading the manifest here means a new example is covered the moment it is registered, with no test to update.
+def _baselines():
+    import tomllib
+    with open(os.path.join(GOLD, "MANIFEST.toml"), "rb") as fh:
+        files = tomllib.load(fh)["files"]
+    return sorted(name for name, meta in files.items()
+                  if meta.get("lint_role") == "baseline" and meta.get("status") == "indexable")
+
+
+@pytest.mark.parametrize("name", _baselines())
+def test_every_manifest_baseline_still_lints_clean(name):
+    rep = lint_file(os.path.join(GOLD, name))
+    errors = [f"{i['check']}: {i['detail']}" for i in rep["issues"] if i["severity"] == "error"]
+    assert errors == [], f"{name} is a gold example the model learns from, and it no longer lints clean"
+
+
+def test_the_manifest_lists_more_than_one_baseline():
+    """Guards the test above against silently covering nothing if the manifest is restructured."""
+    assert len(_baselines()) >= 5
