@@ -460,3 +460,51 @@ quota stop threw away the reps that had already completed. `run_web.py` now stop
 
 **Next:** re-run the 3-rep measurement when the quota resets; then measure the systolic example going into the
 prompt, with a held-out exam of its own shape. Wiring correctness (19/32) is still the open quality problem.
+
+## Overnight run: four new example shapes, new logo, and the site rebuilt on video (2026-10-05)
+
+**New gold examples** (all 0 lint errors, 0 warnings; all cited in docs/SOURCES.md; all registered indexable in
+MANIFEST.toml; **none of them in the live prompt yet, because they are unmeasured**):
+
+| file | shape | what it teaches that the chip examples cannot |
+|---|---|---|
+| `systolic_array_mac.py` | 4x4 MAC array | 16 blocks from a loop, computed grid coordinates, a whole diagonal in one `play()` |
+| `mesi_cache_fsm.py` | MESI state machine | circular nodes, curved transitions, a self-loop, highlight instead of a travelling packet |
+| `lockstep_safety_island.py` | dual-core lockstep | strict mirror symmetry, two datapaths into one block without crossing, a safety region, a fault as a state change |
+| `cim_crossbar_array.py` | compute-in-memory crossbar | the blocks ARE the intersections; cells recoloured in place; analog and digital visually separated |
+
+Three faults the linter caught that the eye would have missed, and one the eye caught that lint did not:
+- crossbar: every wordline and bitline originally stopped in empty space, so the decoder and sense amps are now
+  built first and each line ends ON one of them;
+- crossbar: six column wires ran straight through the sense-amp caption, and the wordline labels sat on the
+  wordlines;
+- lockstep: a banner line too long for the frame;
+- **and the one lint passed happily**: `Line(decoder.get_right(), ...)` put all four wordlines at the decoder's
+  mid-height, so they converged on a single point instead of leaving at their own rows. Only the rendered frame
+  showed it. This is why a frame is always rendered and looked at.
+
+**Website**
+- New logo everywhere, built from the supplied artwork: white background turned into real transparency by
+  un-premultiplying it, the near-black wordmark lifted to the site's text grey so it reads on the dark theme,
+  and the chip glyph cropped alone for the favicon and app icons (the wordmark is unreadable at 32px). Every
+  image now carries explicit width and height, so the page no longer reflows while loading.
+- **The gallery is video now, not GIFs.** The four original animations were 480px, 5fps, 16-colour GIFs totalling
+  11.5 MB; as H.264 they are 1.29 MB at 1280px and 30fps. About a ninth of the bytes and visibly sharper. The
+  superseded GIFs are deleted. Hidden popup videos no longer preload themselves.
+- Buttons had no hover, active or focus states at all. Added, with focus-visible rings throughout, a blurred
+  sticky header, an accent rule under each heading, input focus rings, smooth scrolling that respects
+  prefers-reduced-motion, and a web manifest so the 192px icon is finally used.
+- Eight gallery cards, each with its citation in the window.
+
+**Still true and still the open problem:** wiring completeness, 19/32 at best. Blocks and regions are at the
+ceiling the test input allows (31/33 and 2/3). The library fit and pacing result is **n=1** -- the daily Gemini
+free quota of 20 requests ran out mid-run -- so it must be re-run on three reps before it is believed.
+
+**Ready for the next session, no quota needed to prepare:** `bench/run_web.py --no-spec` scores geometry only,
+for a shape with no reference answer. Held-out exams are written for two new shapes: a 3x5 systolic array (a
+different size from the example) and a round-robin arbiter FSM (a different machine from MESI), in
+`bench/web_inputs/`.
+
+**A trap worth writing down:** `.gitignore` has no trailing comments. `!web/assets/video/*.mp4   # comment` made
+the pattern the whole line, so the exception never matched and a green Pages deploy served a 404 video. Twice.
+Always curl the live URL after deploying.
