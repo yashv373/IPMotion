@@ -99,12 +99,12 @@ $("dl").onclick = () => {
 {
   const touch = matchMedia("(hover: none)").matches;
   const cards = [...document.querySelectorAll(".ex")];
-  const setOpen = (c, on) => { c.classList.toggle("open", on); c.setAttribute("aria-expanded", on); c.querySelector(".pop").hidden = !on; };
+  const setOpen = (c, on) => { c.classList.toggle("open", on); c.setAttribute("aria-expanded", on); document.body.classList.toggle("pop-open", cards.some((x) => x.classList.contains("open"))); };
   const closeAll = (except) => cards.forEach((c) => c !== except && setOpen(c, false));
   cards.forEach((c) => {
     let t;
-    c.addEventListener("mouseenter", () => { if (touch) return; clearTimeout(t); closeAll(c); setOpen(c, true); });
-    c.addEventListener("mouseleave", () => { if (touch) return; t = setTimeout(() => setOpen(c, false), 250); });
+    c.addEventListener("mouseenter", () => { if (touch) return; clearTimeout(t); t = setTimeout(() => { closeAll(c); setOpen(c, true); }, 140); }); // short delay: a mouse passing over does not flash a window
+    c.addEventListener("mouseleave", () => { if (touch) return; t = setTimeout(() => setOpen(c, false), 320); });
     c.addEventListener("click", (e) => {
       if (e.target.closest(".popx")) return setOpen(c, false);
       if (!touch || e.target.closest(".pop")) return;
