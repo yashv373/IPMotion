@@ -1,6 +1,6 @@
 // IPMotion generator: runs entirely in the browser. No backend.
 const $ = (id) => document.getElementById(id);
-const CTX = ["00_rules", "10_library_api", "20_example_axi", "25_example_earlgrey", "26_example_darjeeling", "30_user_input_notes"].map((n) => `rag_context/${n}.txt`);
+const CTX = ["00_rules", "10_library_api", "20_example_axi", "25_example_earlgrey", "30_user_input_notes"].map((n) => `rag_context/${n}.txt`);
 const DEFAULT_MODEL = { gemini: "gemini-3.5-flash", anthropic: "claude-opus-5-5" };
 const store = {
   get: (k) => { try { return localStorage.getItem(k) || ""; } catch { return ""; } },

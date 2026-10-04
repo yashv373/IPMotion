@@ -27,7 +27,7 @@ from ipmotion import fidelity  # noqa: E402
 from ipmotion.fullspec import load_story, make_full_spec  # noqa: E402
 from ipmotion.lint.harness import lint_script  # noqa: E402
 
-CTX = ["00_rules", "10_library_api", "20_example_axi", "25_example_earlgrey", "26_example_darjeeling", "30_user_input_notes"]
+CTX = ["00_rules", "10_library_api", "20_example_axi", "25_example_earlgrey", "30_user_input_notes"]
 WEB = os.path.join(C.ROOT, "web", "rag_context")
 
 

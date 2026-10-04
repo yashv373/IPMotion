@@ -325,3 +325,52 @@ the rules mention DomainGroup and paraphrasing.
 
 **Next:** attack paraphrasing (exact-name fidelity). That is the one change that should move regions off 0 and
 stop blocks being counted twice.
+
+## The strict-name rule: two metrics hit their ceiling, the bottleneck moved (2026-10-04)
+
+Change: RULE 0 at the very top of `00_rules.txt` -- "EXACT STRING MATCHING REQUIRED ... you are a parser, not a
+copywriter", with worked wrong/right pairs -- and Darjeeling dropped from the live prompt (kept on disk as a
+reserved asset for a future retrieval step). The clean comparator is the `+Earlgrey` row: same examples, old rules.
+
+| context | lint | spec | blocks | wires | regions | extras |
+|---|---|---|---|---|---|---|
+| 1 example (AXI only) | 13.3 | 53.3 | 29.3/33 | 16.0/32 | 0.0/3 | 15.7 |
+| + Earlgrey | 16.0 | 42.3 | 30.0/33 | 18.7/32 | 0.0/3 | 8.3 |
+| + Earlgrey + Darjeeling | 7.5 | 44.0 | 30.5/33 | 16.0/32 | 0.0/3 | 7.5 |
+| **+ Earlgrey + STRICT NAMES** | 19.0 | 49.0 | **31.0/33** | 10.0/32 | **2.0/3** | 9.5 |
+
+**First, a fairness check that should have been done before any of this.** Three labels the scorer wants are not
+in the user's input text verbatim: 'Entropy Source, CSRNG, EDN' (the input writes it without commas), 'Life Cycle
+Function Control', and the outer region's full title with its en-dashes. So with this input the ceiling is
+**31/33 blocks and 2/3 regions** -- 33 and 3 were never reachable, and every earlier row was being scored against
+an impossible target.
+
+**Against the real ceiling, the rule did exactly what it was predicted to do:**
+- blocks 30.0 -> **31.0 of 31 possible**: maxed.
+- regions 0.0 -> **2.0 of 2 possible**: maxed. The model was always drawing regions; it just named them
+  "Main Power & Clock Domain" instead of "Main power and clock domain". Told to copy character for character,
+  it does, and they count.
+Name fidelity is solved for anything the user actually wrote.
+
+**But the bottleneck moved, and the totals got worse.** Wires fell 18.7 -> 10.0, which drags spec errors up to
+49.0 (22 missing wires are 22 errors) and lint to 19.0, and one of the three runs died with a SyntaxError at 749
+lines. The plausible mechanism: the model now spends its output budget copying long exact names and producing
+much longer files, and loses track of the wiring. That is a hypothesis, not a finding.
+
+**Honest read:** this is not yet a better animation for a visitor, even though two sub-scores are perfect. The
+next lever is wiring completeness, the same way names were attacked: say it bluntly and early in the rules, and
+measure. Do not add more examples first.
+
+**Measurement hygiene, to do before the next comparison:** fix the three labels in `bench/web_inputs/peppermint.txt`
+so the ceiling is a true 33/33 and 3/3. That breaks comparability with the four rows above, so it should be done
+as a deliberate re-baseline, not quietly.
+
+**Website copy** (the user said it reads confusingly):
+- "What it can make" -> "What IPMotion draws", with a line saying plainly that the four gallery animations are
+  reference renders drawn by the engine, that they are what the generator learns from, and that a one-shot
+  result will be rougher. The old heading implied the Generate button made them.
+- The diagram box is no longer "(optional)" in spirit: it now says it is what makes the result good, and that
+  names are copied character for character, with a worked placeholder.
+- The "one shot" warning now says to treat the output as a strong first draft.
+- Removed the internal "v4 pivot" changelog row (meaningless to a visitor) and added a plain-words row for this
+  RAG work.
