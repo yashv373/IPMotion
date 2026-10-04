@@ -47,7 +47,7 @@ def clean_response(t: str) -> str:
     return ((m.group(1) if m else t).strip() + "\n")
 
 
-def run_once(diagram_path: str, story_path: str, spec: dict, rep: int) -> dict:
+def run_once(diagram_path: str, story_path: str, spec: dict | None, rep: int) -> dict:
     name = os.path.splitext(os.path.basename(diagram_path))[0]
     run_dir = C.make_run_dir(name, "web")
     t0 = time.time()
@@ -78,8 +78,10 @@ def run_once(diagram_path: str, story_path: str, spec: dict, rep: int) -> dict:
         print(f"[web] rep {rep}: the file has no Scene class")
         return result
 
-    # exactly the checks the website does NOT do -- that is the point: they tell us what the visitor would get
-    rep_json = lint_script(script, scene, spec=spec)          # no layout: the model never saw one
+    # exactly the checks the website does NOT do -- that is the point: they tell us what the visitor would get.
+    # With no spec (a shape we have no reference answer for) only the geometry is judged: does it run, does it
+    # render, and is the picture clean. That still answers "did this change make the output tidier".
+    rep_json = lint_script(script, scene, spec=spec) if spec else lint_script(script, scene)
     runtime = [i for i in rep_json["issues"] if i["check"] == "runtime_error"]
     lint_errs = [i for i in rep_json["issues"] if i["severity"] == "error" and i["check"] != "runtime_error"]
     conf = [c for c in rep_json.get("conformance", []) if c["check"] != "conformance_static"]
@@ -90,7 +92,7 @@ def run_once(diagram_path: str, story_path: str, spec: dict, rep: int) -> dict:
         crashed = not ok
 
     fid = None
-    if not runtime:
+    if not runtime and spec:
         from ipmotion.lint.worker import load_scene, run_scene
         sys.path.insert(0, adir)
         try:
@@ -127,9 +129,12 @@ def main() -> None:
     ap.add_argument("story")
     ap.add_argument("--spec-story", default="bench/stories/peppermint_ibex_retention_read.yaml",
                     help="the story YAML whose full spec is the yardstick (the exam answer; never sent to the model)")
+    ap.add_argument("--no-spec", action="store_true",
+                    help="score geometry only. For a shape we have no reference answer for, where the question "
+                         "is whether the drawing comes out clean rather than whether it matches a known diagram.")
     ap.add_argument("--reps", type=int, default=1)
     a = ap.parse_args()
-    spec = make_full_spec(load_story(a.spec_story))
+    spec = None if a.no_spec else make_full_spec(load_story(a.spec_story))
     results = []
     for r in range(1, a.reps + 1):
         try:

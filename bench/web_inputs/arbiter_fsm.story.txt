@@ -1,0 +1,8 @@
+Walk through one round of arbitration.
+
+Start in Idle. Master A raises a request and the arbiter moves to Grant A. A keeps its
+request asserted for another cycle, so the machine stays in Grant A. Then B requests while A
+finishes, so the arbiter hands over to Grant B. B finishes with nothing else pending, so it
+returns to Idle, and after a quiet spell it drops into Park.
+
+Highlight the state the machine is in at each step, and flash the transition being taken.

@@ -4,65 +4,82 @@ Paste into a fresh Claude Code session: `Read docs/SESSION_START.md and follow i
 
 ---
 
-## 1. Who you are working for and what IPMotion is
-IPMotion turns a hardware block diagram (e.g. OpenTitan Darjeeling, Earlgrey) plus a short "story"
-(e.g. "Ibex reads from the UART") into a presentation-ready Manim animation that is overlap-free,
-text-clean and a 1:1 recreation of the reference picture. The long-term goal (docs/IPMotion_PRD.md)
-is a Renderer-in-the-Loop engine: generate -> lint -> check conformance -> repair, with no human
-acting as the layout engine. The user judges results by eye in bench/report.html.
+## 1. What IPMotion is, and what "done" means
+A visitor opens the website, writes a story, pastes a block diagram and an example write-up, adds their own API
+key, presses Generate, downloads the `.py`, runs it locally with a manim command, and gets a **good first
+animation**. That is the goal in the user's own words. If it needs more polish afterwards they can take the
+script to any chat assistant; later IPMotion should do that refining itself.
 
-## 2. Load context cheaply (do this first, in this order, and nothing else)
-1. `docs/PROGRESS.md`: milestone table + what each milestone built and its known limits.
-2. `graphify-out/GRAPH_REPORT.md`: the codebase map (communities, hubs, key classes).
-3. Only if needed: `docs/PHASE0_FINDINGS.md` (repo facts) and `docs/SPEC.md` (spec format).
+**The user judges progress by the website**: how good the animation looks and how accurate it is. They have said
+they have little interest in the YAML and internal design. Those stay only while they demonstrably serve the
+above. Everything else is infrastructure or waste.
 
-Do NOT list directories, cat whole files, or grep the repo to "get oriented". For any question
-about where something lives or how pieces connect, use `graphify query "<question>"` first, then
-open only the exact file and line range it points to.
+## 2. The two rules that were learned the hard way
+1. **No unmeasured pivots.** The v4 pivot ran for three sessions and three chips before anyone checked whether it
+   fed the product. It did not: a v4 run's output script is five lines, so none of it reached the prompt. The
+   user said it "wasted a lot of money and effort". Before a multi-session build, get the number that would prove
+   it works, even a crude one, FIRST.
+2. **Examples teach a tendency; the library guarantees.** Adding a second big chip example made wiring worse. One
+   rule (copy names exactly) maxed out two metrics. A library fix (DomainGroup fitting its own title) removed a
+   whole class of ugliness without the model's cooperation. Prefer rules and library guarantees over more
+   examples.
 
-## 3. Where things stand (as of 2026-10-04, confirm against PROGRESS.md)
-- Done: M0 housekeeping, M1 port API + geometric lint, M1.6 whole-diagram polish + Earlgrey.
-- M1.5 still open: v3 x3 Darjeeling re-run and Earlgrey/Peppermint benchmark runs, blocked by the
-  daily Gemini free quota (`python bench/run_all.py <spec> --reps 3`, state in runs/bench_state.json).
-- Open follow-ups from M1.6: user review of the Darjeeling report (12 unconfirmed items) and the
-  Earlgrey render; Peppermint has truth but no layout file.
-- Next in the plan: M2 = STYLE.md + style.toml layout conventions. Then M3 LLM layer + run logging,
-  M4 ordered repair loop, M5 vision critique (flagged), M6 approve CLI + incremental indexing.
-- Test suite: 181 passing. Keep it green.
+## 3. Load context cheaply (in this order, nothing else)
+1. `docs/PROGRESS.md` — read the LAST THREE sections. They have the current numbers.
+2. `docs/SOURCES.md` — what is cited and the rule for adding anything new.
+3. Only if needed: `graphify-out/GRAPH_REPORT.md` for where code lives.
 
-## 4. What to do this session
-1. Summarise in at most 10 lines: current milestone, what is left, any blockers.
-2. Propose the next unit of work as 2-3 options (e.g. Peppermint layout to prove a third chip,
-   start M2, or resume the M1.5 benchmark), each with: goal, files touched, how we verify it,
-   rough size (S/M/L). Recommend one.
-3. **Stop and wait for my choice.** Do not write code before I pick.
-4. Once I pick: write a short plan (steps + acceptance checks), then build it step by step.
+Do NOT list directories or grep to "get oriented".
 
-## 5. How to work
-- **Skills:** use the installed agent-skills when they fit: spec/plan before building,
-  test-driven development for new logic, code review before committing. Say which skill you are using.
-- **Keep it small (YAGNI):** reuse existing code in `ipmotion/` and `ipmotion_lib.py` before adding new
-  code; no new dependencies without asking; no speculative abstractions.
-- **Project rules (from CLAUDE.md) still apply:** aesthetics before logic; gold examples are read-only;
-  feedback order stays runtime -> spec conformance -> lint; never commit `.env`.
-- **Verification is not optional:** a step is done only when `pytest -q` passes and, for anything
-  visual, a single-frame render (`-s`) has been checked. Render scratch output outside the project
-  root. Report fidelity/lint numbers the same way PROGRESS.md does.
-- **Be honest about limits:** the fidelity numbers compare the drawing with hand-written notes, not the
-  picture. Don't claim a visual result is correct without showing me the frame.
-- **Ask before:** installing packages, changing thresholds in style.toml, changing the spec format,
-  touching gold examples, or any ambiguous design decision.
+## 4. Where things stand (2026-10-05)
+**The product (the website generator).** One shot, no checking, no repair. Measured by replaying the exact
+browser prompt against a held-out Peppermint exam, scored with the existing lint/conformance/fidelity checks:
 
-## 6. Token discipline
-- Read only the files and line ranges you need. Summarise tool output; never paste raw logs.
-- Don't rebuild the knowledge graph. After large code changes run `graphify . --update`.
-- One milestone (or one sub-task) per session. If the conversation gets long, tell me and suggest
-  `/compact` or a fresh session.
-- Use subagents only for clearly separable work, and tell me before launching one.
+| context | lint | spec | blocks | wires | regions | extras |
+|---|---|---|---|---|---|---|
+| 1 example (AXI only) | 13.3 | 53.3 | 29.3/33 | 16.0/32 | 0.0/3 | 15.7 |
+| + Earlgrey | 16.0 | 42.3 | 30.0/33 | 18.7/32 | 0.0/3 | 8.3 |
+| + Earlgrey + Darjeeling | 7.5 | 44.0 | 30.5/33 | 16.0/32 | 0.0/3 | 7.5 |
+| + strict names | 19.0 | 49.0 | 31.0/33 | 10.0/32 | 2.0/3 | 9.5 |
+| + library fit & pacing (**n=1**) | 22.0 | 37.0 | 31.0/33 | 19.0/32 | 2.0/3 | 6.0 |
 
-## 7. End of session (always)
-1. `pytest -q` green.
-2. Update `docs/PROGRESS.md`: milestone table + a short section (goal, what was built, results, known
-   limits, next). Same plain style as the existing entries.
-3. `graphify . --update` if code changed meaningfully.
-4. Commit with a clear message. Tell me what to review (e.g. refresh bench/report.html).
+**The ceiling with the current test input is 31/33 blocks and 2/3 regions**, because three labels the scorer
+wants are not in the input verbatim. Blocks and regions are therefore AT their ceiling. **Wiring, 19/32, is the
+open quality problem.**
+
+**Live prompt contains:** rules, library API, the AXI example, the Earlgrey example, input notes. Darjeeling was
+removed (it cost prompt size without earning it). **Peppermint is held out and must never enter a prompt** — it
+is the exam. A test enforces this.
+
+**Gold examples** (all 0 lint errors, all cited in docs/SOURCES.md, all registered in MANIFEST.toml):
+`axi_read_handshake`, `systolic_array_mac`, `mesi_cache_fsm`, `lockstep_safety_island`, `cim_crossbar_array`.
+The last four are **deliberately not in the live prompt yet** — they are unmeasured.
+
+## 5. What to do next, in order
+1. **Re-run the 3-rep measurement** — the library-fit result is n=1 because the daily Gemini free quota (20
+   requests) ran out. `python bench/run_web.py bench/web_inputs/peppermint.txt bench/web_inputs/peppermint.story.txt --reps 3`
+2. **Attack wiring completeness.** It is the one number still far from its ceiling. Do it the way names were
+   attacked: one blunt rule high in the prompt, measured in isolation. Not more examples.
+3. **Measure a new shape going in.** Held-out exams are ready: `bench/web_inputs/systolic.*` and
+   `bench/web_inputs/arbiter_fsm.*`. Score them with `--no-spec` (geometry only; there is no reference answer
+   for a shape we invented the exam for).
+4. **Retrieval.** With five gold examples, sending all of them is not viable — the prompt was already 85k
+   characters with two. Pick the 1-2 that match the user's input. This is the user's own idea and it stops being
+   optional at example three.
+5. **Re-baseline** after fixing the three unmatched labels in `bench/web_inputs/peppermint.txt`, as a deliberate
+   step, since it breaks comparability with every row above.
+
+## 6. How to work
+- **Measure before you build.** State the number you expect to move before starting.
+- **Verify by eye.** Lint passing is not the same as looking right: the MESI labels passed lint while sitting on
+  their own arcs, and a wordline bug that put four lines on one point passed lint too. Render a frame and look.
+- **Check the live site after deploying.** A green Pages build has twice served a 404 asset (`*.mp4` is
+  gitignored; a trailing comment broke the exception). Always curl the URL.
+- Never put backslash escapes in a Bash heredoc — this environment eats them. Use the Write/Edit tools.
+- Project rules in CLAUDE.md still apply: aesthetics before logic, gold examples read-only, never commit `.env`.
+- End every summary with a plain-words "What to look at" section listing full Windows paths.
+
+## 7. End of session
+1. `pytest -q` green (198 at the time of writing).
+2. Update `docs/PROGRESS.md` with numbers, not adjectives.
+3. Commit, push, and confirm the deploy actually serves what you changed.

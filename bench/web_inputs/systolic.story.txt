@@ -1,0 +1,6 @@
+Show the array computing one matrix multiply, wavefront by wavefront.
+
+Every processing element on the same diagonal works at the same moment, so light up a whole
+diagonal at once rather than one element at a time. Start at PE 0,0, then the diagonal with
+PE 0,1 and PE 1,0, and so on until the bottom-right. Finish by showing all five partial sums
+leaving the bottom of the array.

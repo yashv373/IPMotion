@@ -1,0 +1,22 @@
+A state machine for a simple two-master round-robin bus arbiter. Draw it as states and
+transitions, not as a floorplan.
+
+There are four states, drawn as circles:
+  "Idle"
+  "Grant A"
+  "Grant B"
+  "Park"
+
+Transitions, each with its own label:
+  Idle -> Grant A, labelled "req A only"
+  Idle -> Grant B, labelled "req B only"
+  Grant A -> Grant B, labelled "req B, A done"
+  Grant B -> Grant A, labelled "req A, B done"
+  Grant A -> Idle, labelled "A done, no req"
+  Grant B -> Idle, labelled "B done, no req"
+  Idle -> Park, labelled "idle timeout"
+  Park -> Idle, labelled "any request"
+
+Two transitions return to the state they came from:
+  Grant A -> Grant A, labelled "A still asserted"
+  Grant B -> Grant B, labelled "B still asserted"

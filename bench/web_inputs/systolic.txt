@@ -1,0 +1,20 @@
+A 3x5 systolic array for matrix multiply, inside a block called "MAC Array".
+
+The array is 3 rows by 5 columns of identical processing elements. Name them PE r,c
+with the row first, so the top-left one is "PE 0,0" and the bottom-right one is "PE 2,4".
+
+On the left of the array, one input label per row:
+  "Activations row 0"
+  "Activations row 1"
+  "Activations row 2"
+Each one has an arrow into the leftmost PE of its row.
+
+Above the array, one input label per column:
+  "Weights col 0" through "Weights col 4"
+Each one has an arrow down into the top PE of its column.
+
+Below the array, one output label per column:
+  "Partial sum 0" through "Partial sum 4"
+Each one has an arrow from the bottom PE of its column.
+
+Activations travel left to right along a row. Weights travel top to bottom down a column.
