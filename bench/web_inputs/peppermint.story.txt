@@ -1,0 +1,5 @@
+Ibex reads from the Retention SRAM in the always-on domain.
+
+Show it step by step: Ibex Core sends a read request, the Main TL-UL Crossbar passes it to the always-on side,
+the AON TL-UL Cross bar sends it to the Retention SRAM, the Retention SRAM answers, and the response travels
+back over the same links until Ibex Core has the data.

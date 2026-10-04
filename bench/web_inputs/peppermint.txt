@@ -1,0 +1,36 @@
+OpenTitan Peppermint - Integrated Root of Trust (iRoT) and Secure Enclave.
+
+There are two power domains side by side inside the chip.
+
+Main power and clock domain (left, the bigger one):
+  Ibex Core (RV32IMCB), with a DUAL LOCKSTEP shadow behind it
+  Interrupt Controller, ROM
+  OTP (Fuse) Controller, Main SRAM
+  Main TL-UL Crossbar - a wide bar across the middle of this domain
+  OTBN, KMAC, HMAC, Key Manager DPE
+  Entropy Source CSRNG EDN, AES, Timers
+  DMA, Mailboxes (inbound & outbound), Debug Module, Life Cycle Controller
+
+Always-On (AON) power and clock domain (right, narrower):
+  AON TL-UL Cross bar - a tall bar down the left of this domain
+  Alert Handler, Power Manager, Reset Manager, Clock Manager
+  Retention SRAM (drawn with a dashed outline)
+
+Wiring:
+  Ibex Core -> Main TL-UL Crossbar
+  Main TL-UL Crossbar <-> OTP (Fuse) Controller, Main SRAM, OTBN, KMAC, HMAC, Key Manager DPE
+  OTP (Fuse) Controller -> Interrupt Controller, Main SRAM -> ROM
+  Main TL-UL Crossbar -> AON TL-UL Cross bar
+  OTBN and KMAC <-> Entropy Source CSRNG EDN; HMAC <-> AES; Key Manager DPE <-> Timers
+  Entropy Source CSRNG EDN -> DMA and -> Mailboxes; AES -> Debug Module; Timers -> Life Cycle Controller
+  AON TL-UL Cross bar -> Alert Handler, Power Manager, Reset Manager, Clock Manager, Retention SRAM
+
+Labels around the edge (text only, with an arrow crossing the border):
+  left:   "Memory bus egress for Ibex and DMA" from the Main TL-UL Crossbar
+          "Noise source bits" into Entropy Source CSRNG EDN
+  bottom: "Memory bus ingress to Mailbox" into Mailboxes
+          "Outbound message IRQ" out of Mailboxes
+          "Debug module interface (DMI)" into Debug Module and Life Cycle Controller
+  right:  "Alerts from SoC" into Alert Handler
+          "Power Handshake" both ways with Power Manager
+          "SoC CPU Reset" out of Reset Manager

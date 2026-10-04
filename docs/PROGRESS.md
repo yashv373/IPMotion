@@ -213,3 +213,52 @@ the legend-swatch test, which needs a chip that has swatches). Whole suite: 191 
 **Next:** user reviews the three renders in bench/report.html (Peppermint's 3 unconfirmed items, Darjeeling's 12);
 then M2 (STYLE.md + style.toml layout conventions), now that three chips show which rules actually generalise.
 Handoff for the main builder: docs/WEB_HANDOFF.md (UI flow, file map, what must be kept in sync).
+
+## Direction correction + first honest baseline of the product (2026-10-04)
+
+**The user's call, in their words:** the goal is that a stranger opens the website, writes a story, gives a block
+diagram and an example write-up, adds an API key, hits Generate, downloads the .py, runs it with a manim command
+and gets a **good first animation**. We are building that ecosystem, not hand-refining animations. Progress is
+judged on how good and how accurate the animation on the website is. The user also said plainly that the v4
+pivot "wasted a lot of money and effort" by running for three sessions before anyone checked it fed the product.
+
+**What an audit of the product found (not an opinion -- these are counts):**
+- The Generate button sends ~223 lines of context, makes ONE request, and does no lint, no conformance check and
+  no retry. The repair loop exists only in the benchmark, never in the browser.
+- Of those 223 lines, exactly 80 are a worked example: one, the AXI handshake. It is the only file marked
+  `indexable` in gold_examples/MANIFEST.toml. Of the other six gold scripts, three crash with NameError and the
+  rest teach overlapping blocks, text outside the frame, or bypass the library. There is no second example.
+- **The three chips contributed nothing to it.** A v4 run's output script is five lines (`class FullStory(
+  FullDiagramScene): STORY = ...`); all the drawing lives in diagram.py. There is no Manim code in it for a model
+  to imitate, so Darjeeling, Earlgrey and Peppermint were invisible to the thing the website does.
+
+**Decisions (user, 2026-10-04)**
+- Darjeeling and Earlgrey may become worked examples inside the prompt. **Peppermint is held out and must never
+  reach a prompt**, so scoring against it stays honest. This amends the blanket CLAUDE.md rule, which now says so.
+- Quality is measured by replaying the website's exact one-shot prompt and scoring with the existing checks.
+- Order corrected after the user's feedback: the measurement is built and run FIRST, so every later change to the
+  examples is justified by a number instead of a theory. That is the mistake the v4 pivot made.
+
+**Built: `bench/run_web.py`** -- replays `web/app.js` byte-for-byte (same four context files, same `=====`
+joining, same user sections, same fence stripping, same model `gemini-3.5-flash`), once, with no feedback, then
+scores the result with the existing lint + conformance + fidelity checks. Inputs are in `bench/web_inputs/`:
+a plain-text Peppermint block diagram and a plain-English story, written the way a visitor would type them.
+
+**BASELINE, 1 run, Peppermint held out (runs/20261004_203734_peppermint_web):**
+- The script runs and renders -- it does not crash. 241 lines.
+- 10 lint errors, 49 spec errors.
+- Blocks 29/33, wires **16/32**, regions **0/3**, 11 extras.
+- Typical failures: labels paraphrased ('Ibex Core (Lockstep)' for 'Ibex Core (RV32IMCB)', 'Mailboxes' for
+  'Mailboxes (inbound & outbound)'), so the block counts as both missing and extra; no region/domain boxes drawn
+  at all; half the wiring absent.
+- Fixed while building the harness: it passed a file path where `common.scene_name` wants the source text, and
+  reported a perfectly good script as having no Scene class.
+
+**What this number means:** the drawing half of the framework is strong and the generating half is weak, and the
+weakness is that the model has one worked example to learn from. Half the wires and all three regions missing is
+not a prompt-wording problem.
+
+**Next:** add Darjeeling and Earlgrey as worked examples (they need a flat Manim script emitted from diagram.py,
+since the five-line stub teaches nothing), then re-run this exact baseline and compare. Peppermint stays out of
+the prompt. Also still open: wiring the `web` pipeline into bench/make_report.py so these runs show up beside
+the others.

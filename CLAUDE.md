@@ -2,7 +2,10 @@
 Read docs/PHASE0_FINDINGS.md and docs/PROGRESS.md at session start. Don't re-explore the repo.
 
 ## Rules
-- Architecture facts come only from bench/truth/*.yaml (transcribed from opentitan_archs/ and openPulp_arch/). Never from memory. Truth files are never indexed or put in prompts.
+- Architecture facts come only from bench/truth/*.yaml (transcribed from opentitan_archs/ and openPulp_arch/). Never from memory.
+- Truth files are never indexed or put in prompts, with one exception the user made on 2026-10-04: Darjeeling and
+  Earlgrey content may appear in web/rag_context as worked examples. **Peppermint is held out** - it must never
+  reach a prompt, because it is the exam we score the website against (bench/run_web.py).
 - Gold examples are read-only. Index status lives in gold_examples/MANIFEST.toml.
 - Fix aesthetics before logic.
 - Never commit API keys; .env stays ignored.
