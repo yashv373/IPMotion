@@ -8,7 +8,8 @@ media/
 generated/
 _render_temp.py
 *.mp4
-!web/assets/video/*.mp4          # ...except the site's own explainer, which has to ship
+# ...except the site own videos, which have to ship
+!web/assets/video/*.mp4
 
 # Vector store and caches
 .chroma_db/
