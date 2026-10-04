@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 300" font-family="Consolas,monospace">
+<defs><marker id="g" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="#2fbf71"/></marker>
+<marker id="b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="#3b9cff"/></marker></defs>
+<rect width="640" height="300" fill="#ffffff"/>
+<rect x="30" y="80" width="150" height="150" rx="10" fill="#e8f1fb" stroke="#1f6fb8" stroke-width="3"/>
+<rect x="460" y="80" width="150" height="150" rx="10" fill="#e8f1fb" stroke="#1f6fb8" stroke-width="3"/>
+<text x="105" y="160" text-anchor="middle" font-size="18" font-weight="bold" fill="#14304d">AXI Master</text>
+<text x="535" y="160" text-anchor="middle" font-size="18" font-weight="bold" fill="#14304d">AXI Slave</text>
+<text x="320" y="36" text-anchor="middle" font-size="15" fill="#2a7a4b">Read Address Channel (AR)</text>
+<line x1="184" y1="100" x2="456" y2="100" stroke="#2fbf71" stroke-width="3" marker-end="url(#g)"/>
+<text x="320" y="92" text-anchor="middle" font-size="12" fill="#2a7a4b">ARVALID, ARADDR</text>
+<line x1="456" y1="130" x2="184" y2="130" stroke="#2fbf71" stroke-width="3" marker-end="url(#g)"/>
+<text x="320" y="122" text-anchor="middle" font-size="12" fill="#2a7a4b">ARREADY</text>
+<line x1="456" y1="180" x2="184" y2="180" stroke="#3b9cff" stroke-width="3" marker-end="url(#b)"/>
+<text x="320" y="172" text-anchor="middle" font-size="12" fill="#1f5fa8">RDATA, RVALID, RLAST</text>
+<line x1="184" y1="210" x2="456" y2="210" stroke="#2fbf71" stroke-width="3" marker-end="url(#g)"/>
+<text x="320" y="202" text-anchor="middle" font-size="12" fill="#2a7a4b">RREADY</text>
+<text x="320" y="264" text-anchor="middle" font-size="15" fill="#1f5fa8">Read Data Channel (R)</text>
+</svg>

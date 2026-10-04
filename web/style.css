@@ -43,3 +43,14 @@ code{background:var(--panel);padding:1px 5px;border-radius:4px}
 @media (max-width:640px){.card:has(.about-logo){padding:24px 20px}.card .about-logo{height:64px}}
 .card .about-logo{width:auto;aspect-ratio:auto;background:none;border-radius:0;object-fit:initial;height:84px}
 td.note{white-space:nowrap}
+.ex{position:relative;cursor:pointer;transition:border-color .2s,box-shadow .2s}
+.ex:hover,.ex:focus-visible,.ex.open{border-color:var(--accent);box-shadow:0 6px 24px rgba(0,200,200,.15);outline:none}
+.explore{display:inline-block;margin-top:6px;color:var(--accent);font-weight:600}.explore small{color:var(--mute);font-weight:400}
+.pop{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);width:min(960px,94vw);max-height:88vh;overflow:auto;background:var(--panel);border:1px solid var(--accent);border-radius:14px;padding:24px 26px;box-shadow:0 24px 90px rgba(0,0,0,.75);z-index:30;cursor:default;text-align:left}
+.pop[hidden]{display:none}
+.popx{position:absolute;right:12px;top:10px;padding:2px 12px;font-size:1.3rem;line-height:1.3}
+.popgrid{display:grid;grid-template-columns:1.1fr 1fr;gap:24px;align-items:start}
+.pop figure{margin:0}.card .pop img.ref{aspect-ratio:auto;background:#fff;border-radius:8px;object-fit:contain;max-height:62vh;width:100%}
+.pop h4{margin:14px 0 4px;color:var(--accent)}.pop p,.pop ol{margin:0}.pop ol{padding-left:20px;font-size:.92rem}
+.steps li{margin:8px 0}
+@media (max-width:760px){.popgrid{grid-template-columns:1fr}.pop{padding:20px 16px}}

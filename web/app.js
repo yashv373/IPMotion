@@ -94,3 +94,27 @@ $("dl").onclick = () => {
   a.href = URL.createObjectURL(new Blob([$("code").textContent], { type: "text/x-python" }));
   a.download = "script.py"; a.click(); URL.revokeObjectURL(a.href);
 };
+
+// Example gallery: hover (mouse) or tap (touch) a card to open its detail window; leave or tap away to close.
+{
+  const touch = matchMedia("(hover: none)").matches;
+  const cards = [...document.querySelectorAll(".ex")];
+  const setOpen = (c, on) => { c.classList.toggle("open", on); c.setAttribute("aria-expanded", on); c.querySelector(".pop").hidden = !on; };
+  const closeAll = (except) => cards.forEach((c) => c !== except && setOpen(c, false));
+  cards.forEach((c) => {
+    let t;
+    c.addEventListener("mouseenter", () => { if (touch) return; clearTimeout(t); closeAll(c); setOpen(c, true); });
+    c.addEventListener("mouseleave", () => { if (touch) return; t = setTimeout(() => setOpen(c, false), 250); });
+    c.addEventListener("click", (e) => {
+      if (e.target.closest(".popx")) return setOpen(c, false);
+      if (!touch || e.target.closest(".pop")) return;
+      closeAll(c); setOpen(c, !c.classList.contains("open"));
+    });
+    c.addEventListener("keydown", (e) => {
+      if (e.target !== c && e.key !== "Escape") return;
+      if (e.key === "Enter" || e.key === " ") { e.preventDefault(); closeAll(c); setOpen(c, !c.classList.contains("open")); }
+      if (e.key === "Escape") setOpen(c, false);
+    });
+  });
+  document.addEventListener("click", (e) => { if (!e.target.closest(".ex")) closeAll(); });
+}
