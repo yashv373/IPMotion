@@ -225,3 +225,6 @@ file. Nothing is committed yet; the working tree holds everything below.
 
 **Next session, in order:** problem 1, then 2, then 3, then 4; re-run all three chips; write the tests;
 `python bench/make_report.py`; commit.
+
+## Web track: static BYOK site (2026-10-04, parallel to M1.7)
+`web/` (see docs/WEB_UI_SPEC.md): index/how-it-works/changelog pages, `app.js` (context stuffing from `web/rag_context/*.txt`, direct browser call to Gemini or Anthropic, key in localStorage), `make_context.py` (hand-run regenerator), `assets/gifs/` (3 low-quality GIFs from darjeeling/earlgrey/axi scripts), `.github/workflows/pages.yml` (copies bench/report.html in and deploys). `ipmotion/` untouched. Tested with `python -m http.server` from `web/`: all pages and context files load, JS parses. NOT tested: a real LLM call (needs a key), Pages deploy (needs Pages set to "GitHub Actions" in repo settings). OpenAI dropped (CORS unverified).

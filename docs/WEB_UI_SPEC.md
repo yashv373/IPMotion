@@ -1,6 +1,6 @@
 # IPMotion Web UI — Spec (plan only, nothing built yet)
 
-Status: **awaiting approval**. Written 2026-10-04. Parallel track; the Python engine in `ipmotion/`
+Status: **built** (2026-10-04). Decisions: v3 .py output only; no truth files in rag_context (user's own pasted diagram text goes in the prompt); GIFs rendered from existing scripts; Gemini `gemini-3.5-flash` default + Anthropic `claude-opus-5-5` option; OpenAI dropped; Actions workflow for hosting; `web/make_context.py` built (regenerates the API digest + example). Parallel track; the Python engine in `ipmotion/`
 is not touched.
 
 Attribution string, used verbatim in the header, the footer and the About block of every page:

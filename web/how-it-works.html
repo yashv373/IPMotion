@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en" data-theme="dark"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>How IPMotion Works</title><meta name="description" content="IPMotion: describe a hardware block diagram story, get a Manim animation script. Bring your own API key; nothing runs on our servers.">
+<link rel="stylesheet" href="style.css"></head><body>
+<header><div class="wrap"><a class="brand" href="index.html">IPMotion</a><nav><a href="index.html">Generator</a><a href="how-it-works.html" aria-current=page>How it works</a><a href="changelog.html">Changelog</a></nav>
+<span class="credit">Ideated by Yashvardhan Singh | Development by Claude Code</span></div></header>
+<main class="wrap">
+<section class="hero"><h1>How it works</h1><p>IPMotion treats a diagram animation as something a program can measure. A model proposes; geometry and a renderer check. This page describes the full local pipeline, and what this website skips.</p></section>
+
+<h2>1. Source of truth</h2>
+<p>Architecture facts come from hand-transcribed <strong>truth files</strong> (YAML: blocks, domains, connections, fills), never from a model's memory. A <strong>layout file</strong> adds pixel boxes detected from the reference picture's fill colours, plus hand-read wire routes. Truth files are never indexed or put in prompts, which protects the benchmark from leaking.</p>
+
+<h2>2. Schemas and validation</h2>
+<p><code>spec_validator</code> checks a spec against a schema: unique ids, connections that name real blocks, nested domains, <code>scope: full</code> for whole diagrams, and an explicit <code>unconfirmed</code> flag for things the picture does not make clear. Unclear items are drawn amber-dashed and listed for a human to confirm, never silently dropped.</p>
+
+<h2>3. Library and ports</h2>
+<p><code>ipmotion_lib.py</code> provides <code>IPBlock</code>, <code>DomainGroup</code>, <code>Banner</code>, gate/symbol classes and a port API. A <code>Port</code> is an invisible named point with an outward side, so <code>Connection(src_port, dst_port)</code> routes orthogonal wires (straight, Z, around, U-turn). Library changes are additive and checked against recorded golden geometry.</p>
+
+<h2>4. Renderer-in-the-loop</h2>
+<p>Instead of trusting generated code, the engine runs it. A worker subprocess executes the scene with <code>play()</code>/<code>wait()</code> patched, and snapshots every mobject's geometry after each one. No video is encoded, so a lint pass takes seconds. Only then is a real render made.</p>
+
+<h2>5. Geometric linting</h2>
+<table><tr><th>Check</th><th>Catches</th></tr>
+<tr><td><code>text_overlap</code></td><td>Two labels sharing pixels</td></tr><tr><td><code>text_occluded</code></td><td>Text hidden under a later-drawn block</td></tr>
+<tr><td><code>dangling_endpoint</code></td><td>Wires that end in empty space</td></tr><tr><td><code>out_of_frame</code></td><td>Content clipped by the frame</td></tr>
+<tr><td><code>min_spacing</code></td><td>Blocks too close or overlapping</td></tr><tr><td><code>min_text_size</code></td><td>Labels too small to read at 1080p</td></tr></table>
+<p class="note">Thresholds live in <code>style.toml</code>. Travelling packets are transient and skipped by the spacing checks.</p>
+
+<h2>6. Spec conformance and fidelity</h2>
+<p>Passing lint does not mean the animation matches the diagram. <code>conformance.py</code> compares the drawn snapshots with the spec: every label drawn, domain members inside their region, every connection with the right arrowheads, no extra blocks, banners in order. <code>fidelity.py</code> scores blocks, regions, wires, extras and left/right/above/below order. Repeated names (the same block per power domain) are paired by reference order.</p>
+
+<h2>7. Repair loop (feedback order)</h2>
+<p>Runtime errors first, then spec conformance, then lint, at most five grouped items per attempt. Spec errors are structural, so fixing layout before the right blocks exist is wasted work. This is the "aesthetics before logic" rule applied to model feedback.</p>
+
+<h2>8. Two generation modes</h2>
+<p><strong>v3 (this website):</strong> the model writes a whole Manim script against the library. <strong>v4 (local):</strong> code draws the whole diagram from truth + layout, and only the story varies, so the diagram is deterministic.</p>
+
+<h2>What this website does</h2>
+<p>Context stuffing: it fetches four static text files (rules, library API, one verified gold example, notes), appends your story and diagram text, and sends one request from your browser to your provider. <strong>No lint, no conformance check and no repair loop run here.</strong> Run <code>python -m ipmotion.lint script.py</code> locally to get them.</p>
+<p><a class="btn" href="index.html#generator">Try the generator</a></p>
+<h2>About</h2><p class="card">IPMotion turns a hardware block diagram and a short story into a Manim animation.
+<strong>Ideated by Yashvardhan Singh | Development by Claude Code</strong>. Source: <a href="https://github.com/yashv373/IPMotion">github.com/yashv373/IPMotion</a>.</p>
+</main>
+<footer><div class="wrap"><p><strong>Ideated by Yashvardhan Singh | Development by Claude Code</strong></p>
+<p class="note">Static site. No server, no analytics, no tracking. Your API key never leaves your browser except to your chosen LLM provider.</p></div></footer>
+</body></html>
