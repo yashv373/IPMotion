@@ -262,3 +262,66 @@ not a prompt-wording problem.
 since the five-line stub teaches nothing), then re-run this exact baseline and compare. Peppermint stays out of
 the prompt. Also still open: wiring the `web` pipeline into bench/make_report.py so these runs show up beside
 the others.
+
+## Worked examples in the RAG, measured three ways (2026-10-04)
+
+Method: `python bench/run_web.py bench/web_inputs/peppermint.txt bench/web_inputs/peppermint.story.txt --reps 3`
+-- a byte-for-byte replay of what the Generate button sends, one shot, no feedback, scored with the existing
+lint + conformance + fidelity checks. Peppermint is never in the context (enforced by a test), so this measures
+generalisation. Same input text every time.
+
+| context | lint | spec | blocks | wires | regions | extras |
+|---|---|---|---|---|---|---|
+| 1 example (AXI only) | 13.3 | 53.3 | 29.3/33 | 16.0/32 | 0/3 | 15.7 |
+| + Earlgrey (485 lines) | 16.0 | 42.3 | 30.0/33 | 18.7/32 | 0/3 | 8.3 |
+| + Earlgrey + Darjeeling (630) | 7.5 | 44.0 | 30.5/33 | 16.0/32 | 0/3 | 7.5 |
+
+(the third row averages 2 runs: one of the three crashed with `NameError: DoubleHeadedArrow`, the model
+inventing a class -- the same failure that already excludes three of the seven gold scripts, not a new one.)
+
+**Earlgrey earned its place:** extras nearly halved (15.7 -> 8.3) and spec errors fell 21%. The model stopped
+drawing things that are not in the diagram.
+**Darjeeling did not, on this evidence:** lint errors improved a lot (16.0 -> 7.5, better than baseline) but
+wires went back down to 16.0 and spec errors did not move, while the prompt doubled from 42k to 85k characters.
+Both are shipped because the user asked for both; the number says the second example is not paying for itself
+and should be re-tested or dropped.
+
+**A correction worth recording.** An earlier commit message here claimed the model "had never seen a region
+drawn, hence 0/3". That was wrong, and checking the generated scripts proved it: the baseline runs already
+contained 2 DomainGroups each. The model has been drawing regions all along. **The 0/3 is measuring name
+matching, not region drawing** -- it writes "Main Power & Clock Domain" where the diagram says "Main power and
+clock domain", so the region scores zero.
+
+**That makes paraphrasing the single biggest remaining fault**, and it explains three numbers at once: regions
+score 0, blocks are counted as missing, and the same blocks are then counted as extras. One root cause, three
+symptoms. The next lever is name fidelity, not more examples.
+
+**`ipmotion/emit.py`** turns a drawn reference diagram into a flat standalone Manim script. It only READS a
+built Diagram, so no drawing logic is duplicated and an example can never drift from what the engine draws.
+Getting both chips to emit cleanly took four fixes, each found by the linter, not by eye:
+- a full-width Banner lands on a portrait drawing, so a tall diagram now puts its step caption in the gutter
+  beside the drawing instead;
+- a wire that points at something inside a block (Darjeeling's SoC Proxy trapezoid) is pulled back onto the
+  block's edge, because in a flat script the linter can see the dangling end that the Diagram version hid;
+- the title position is emitted as drawn, not assumed to be the block centre (SoC Proxy pins its title to the top);
+- boxes are emitted as DRAWN, not as written in the notes, because the engine grows a sliver block so its title
+  fits -- without that the example's own text overflowed.
+Result: Earlgrey 485 lines and Darjeeling 630 lines, each 0 lint errors and 0 spec errors against its own spec.
+
+**Prompt changes that went with them** (an example using absolute positions while the rules praised `arrange()`
+would only confuse the model): rule 7 is now size-dependent and points at the examples, a new rule 8 requires a
+DomainGroup per domain added before the blocks, and a closing section names what to copy.
+
+**Tests:** `tests/test_web_context.py` (5, instant, no model calls) -- the harness sends exactly what the
+browser sends (if these drift the measurement silently stops measuring the product), every listed context file
+exists, Peppermint never reaches the prompt, the examples really do teach regions and absolute positions, and
+the rules mention DomainGroup and paraphrasing.
+
+**Known limits**
+- `bench/web_inputs/peppermint.txt` is the "Explainer" input at its tidy end: a realistic BEST case. A messier
+  "Copier" input (raw datasheet text) is untested and would likely score worse.
+- Three runs is a small sample for a model this variable (lint errors ranged 11-26 within one group).
+- The `web` pipeline still does not appear in bench/report.html.
+
+**Next:** attack paraphrasing (exact-name fidelity). That is the one change that should move regions off 0 and
+stop blocks being counted twice.

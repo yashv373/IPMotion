@@ -17,7 +17,9 @@ from __future__ import annotations
 import os
 import sys
 
-from manim import DashedLine
+import textwrap
+
+from manim import DashedLine, config
 
 from ipmotion.diagram import Diagram
 from ipmotion.fullspec import load_story, make_full_spec
@@ -43,8 +45,35 @@ def _c(v) -> str:
     return f'"{str(v).upper()}"'
 
 
+def _cap(text: str, width_u: float) -> str:
+    """Break a step caption to the gutter it has to live in (Consolas at 22pt is ~0.164 units a character)."""
+    return chr(10).join(textwrap.wrap(text, max(12, int(width_u / 0.164))))
+
+
 def _pt(p) -> str:
     return f"[{p[0]:.3f}, {p[1]:.3f}, 0]"
+
+
+def _on_edge(d, c, pts):
+    """A reference wire that points AT something inside a block (Darjeeling's SoC Proxy trapezoid) is drawn
+    ending inside it. In a flat script every block is a named object, so the linter can see that and calls it a
+    dangling end. Pull such an end back onto the block's edge: same wire to the eye, honest to the checker."""
+    for idx, end in ((0, str(c["from"])), (-1, str(c["to"]))):
+        box = d.layout["blocks"].get(end.split(".")[0])
+        if not box:
+            continue
+        cx, cy, w, h = d._box(box)
+        x, y = pts[idx][0], pts[idx][1]
+        if not (cx - w / 2 < x < cx + w / 2 and cy - h / 2 < y < cy + h / 2):
+            continue
+        # push out along whichever edge is nearest
+        dists = {"l": x - (cx - w / 2), "r": (cx + w / 2) - x, "b": y - (cy - h / 2), "t": (cy + h / 2) - y}
+        side = min(dists, key=dists.get)
+        p = list(pts[idx])
+        p[0] = cx - w / 2 if side == "l" else cx + w / 2 if side == "r" else p[0]
+        p[1] = cy - h / 2 if side == "b" else cy + h / 2 if side == "t" else p[1]
+        pts[idx] = p
+    return pts
 
 
 def emit(story_path: str) -> str:
@@ -77,7 +106,11 @@ def emit(story_path: str) -> str:
         blk = d.blocks.get(b["id"])
         if blk is None:
             continue
-        cx, cy, w, h = d._box(d.layout["blocks"][b["id"]])
+        # read the box as DRAWN, not as written in the notes: the engine grows a sliver block so its title
+        # fits, and the example has to carry that or its own text overflows
+        box = blk.bg.box
+        cx, cy = box.get_center()[0], box.get_center()[1]
+        w, h = box.width, box.height
         var = "b_" + b["id"]
         names[b["id"]] = var
         title = blk.title or ""
@@ -86,6 +119,7 @@ def emit(story_path: str) -> str:
         a(f"        {var}.move_to([{cx:.3f}, {cy:.3f}, 0])")
         if title.strip():
             a(f"        {var}.txt.font_size = {blk.txt.font_size:.2f}")
+            a(f"        {var}.txt.move_to({_pt(blk.txt.get_center())})")
         a(f"        self.add({var})")
     a("")
 
@@ -112,6 +146,7 @@ def emit(story_path: str) -> str:
         var = "w_" + c["id"]
         parts = []
         for ri, pts in enumerate(routes):
+            pts = _on_edge(d, c, list(pts))
             for i in range(len(pts) - 1):
                 nm = f"{var}_{ri}_{i}"
                 kind = "DashedLine" if dashed else "Line"
@@ -125,16 +160,41 @@ def emit(story_path: str) -> str:
                 parts.append(nm)
         a(f"        {var} = VGroup({', '.join(parts)})")
         a(f"        self.add({var})")
+        ct = d.labels.get("conn_" + c["id"])
+        if ct is not None:
+            a(f"        {var}_lb = Text({c['printed_label']!r}, font=\"Consolas\", font_size={ct.font_size:.2f}, "
+              f"color={_c(ct.get_color())})")
+            a(f"        {var}_lb.move_to({_pt(ct.get_center())})")
+            a(f"        self.add({var}_lb)")
     a("")
 
-    a("        # ---- 5. the story: one banner per step, lighting up what it names ----")
-    a(f"        banner = Banner({spec['title']!r}, theme)")
-    a("        banner.move_to([0, 3.6, 0])")
-    a("        self.add(banner)")
+    # A Banner is 14 units wide and 0.8 tall. A portrait reference fills the frame height, so there is no free
+    # strip for one: its step text goes in the gutter beside the drawing instead, which is also the honest
+    # lesson -- put the caption where the drawing is not.
+    top = max(d.P(0, y)[1] for y in (0, d.layout["image_size"][1]))
+    room_above = config.frame_height / 2 - 0.16 - top
+    gutter_x0, gutter_x1 = d._panel_x0, config.frame_width / 2 - 0.16
+    use_banner = room_above >= 0.9
+
+    a("        # ---- 5. the story: one step caption at a time, lighting up what it names ----")
+    if use_banner:
+        a(f"        caption = Banner({spec['title']!r}, theme)")
+        a(f"        caption.move_to([0, {top + room_above / 2:.3f}, 0])")
+    else:
+        a("        # the drawing fills the height, so the caption goes beside it, never on top of it")
+        a(f"        CAP = [{(gutter_x0 + gutter_x1) / 2:.3f}, 2.2, 0]")
+        a(f"        caption = Text({_cap(spec['title'], gutter_x1 - gutter_x0)!r}, font=\"Consolas\", "
+          f"font_size=22, color=\"#E5E7EB\", weight=BOLD, line_spacing=0.9)")
+        a("        caption.move_to(CAP)")
+    a("        self.add(caption)")
     a("        self.wait(0.5)")
     for step in spec["sequence"]:
         a("")
-        a(f"        self.play(banner.update_text({step['banner']!r}, theme, ACTIVE))")
+        if use_banner:
+            a(f"        self.play(caption.update_text({step['banner']!r}, theme, ACTIVE))")
+        else:
+            a(f"        self.play(Transform(caption, Text({_cap(step['banner'], gutter_x1 - gutter_x0)!r}, "
+              f"font=\"Consolas\", font_size=22, color=ACTIVE, weight=BOLD, line_spacing=0.9).move_to(CAP)))")
         lit = [f"{names[b]}.bg.animate.set_color(ACTIVE)" for b in step.get("highlight", []) if b in names]
         lit += [f"w_{c}.animate.set_color(ACTIVE)" for c in step.get("activate", []) if "w_" + c]
         if lit:

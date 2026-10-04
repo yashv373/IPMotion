@@ -47,162 +47,202 @@ class EarlgreyIbexUartReadScene(Scene):
         b_ibex_core = IPBlock('Ibex Core\n(RV32{I,CHERIoT}\nMCBZcbZcmp)', theme, width=1.376, height=0.757, fill="#0F2238", stroke="#60A5FA", line_spacing=0.25)
         b_ibex_core.move_to([-5.633, 1.486, 0])
         b_ibex_core.txt.font_size = 11.85
+        b_ibex_core.txt.move_to([-5.633, 1.486, 0])
         self.add(b_ibex_core)
         b_interrupt_controller = IPBlock('Interrupt\nController', theme, width=0.757, height=0.366, fill="#0F2238", stroke="#60A5FA", line_spacing=0.25)
         b_interrupt_controller.move_to([-4.265, 1.681, 0])
         b_interrupt_controller.txt.font_size = 10.62
+        b_interrupt_controller.txt.move_to([-4.265, 1.681, 0])
         self.add(b_interrupt_controller)
         b_rom = IPBlock('ROM', theme, width=0.757, height=0.366, fill="#0F2238", stroke="#60A5FA", line_spacing=0.25)
         b_rom.move_to([-3.419, 1.681, 0])
         b_rom.txt.font_size = 11.85
+        b_rom.txt.move_to([-3.419, 1.681, 0])
         self.add(b_rom)
         b_secondary_sram = IPBlock('Secondary\nSRAM', theme, width=0.757, height=0.366, fill="#0F2238", stroke="#60A5FA", line_spacing=0.25)
         b_secondary_sram.move_to([-4.265, 1.087, 0])
         b_secondary_sram.txt.font_size = 11.72
+        b_secondary_sram.txt.move_to([-4.265, 1.087, 0])
         self.add(b_secondary_sram)
         b_main_sram = IPBlock('Main\nSRAM', theme, width=0.757, height=0.366, fill="#0F2238", stroke="#60A5FA", line_spacing=0.25)
         b_main_sram.move_to([-3.419, 1.087, 0])
         b_main_sram.txt.font_size = 11.85
+        b_main_sram.txt.move_to([-3.419, 1.087, 0])
         self.add(b_main_sram)
         b_tlul_crossbar = IPBlock('TL-UL Crossbar', theme, width=3.297, height=0.497, fill="#0F2238", stroke="#60A5FA", line_spacing=0.25)
         b_tlul_crossbar.move_to([-4.689, 0.501, 0])
         b_tlul_crossbar.txt.font_size = 11.85
+        b_tlul_crossbar.txt.move_to([-4.689, 0.501, 0])
         self.add(b_tlul_crossbar)
         b_key_manager_dpe = IPBlock('Key\nManager DPE', theme, width=0.757, height=0.366, fill="#0F2238", stroke="#60A5FA", line_spacing=0.25)
         b_key_manager_dpe.move_to([-5.959, -0.085, 0])
         b_key_manager_dpe.txt.font_size = 9.69
+        b_key_manager_dpe.txt.move_to([-5.959, -0.085, 0])
         self.add(b_key_manager_dpe)
         b_kmac = IPBlock('KMAC', theme, width=0.757, height=0.366, fill="#0F2238", stroke="#60A5FA", line_spacing=0.25)
         b_kmac.move_to([-5.112, -0.085, 0])
         b_kmac.txt.font_size = 11.85
+        b_kmac.txt.move_to([-5.112, -0.085, 0])
         self.add(b_kmac)
         b_entropy_complex = IPBlock('Entropy Complex\n(Entropy\nSource,\nCSRNG, EDNs)', theme, width=0.757, height=0.366, fill="#0F2238", stroke="#60A5FA", line_spacing=0.25)
         b_entropy_complex.move_to([-4.298, -0.085, 0])
         b_entropy_complex.txt.font_size = 5.69
+        b_entropy_complex.txt.move_to([-4.298, -0.085, 0])
         self.add(b_entropy_complex)
         b_spi_host_0 = IPBlock('SPI\nHost 0', theme, width=0.757, height=0.366, fill="#0B1B33", stroke="#3B82F6", line_spacing=0.25)
         b_spi_host_0.move_to([-3.419, -0.085, 0])
         b_spi_host_0.txt.font_size = 11.85
+        b_spi_host_0.txt.move_to([-3.419, -0.085, 0])
         self.add(b_spi_host_0)
         b_otbn = IPBlock('OTBN', theme, width=0.757, height=0.366, fill="#0F2238", stroke="#60A5FA", line_spacing=0.25)
         b_otbn.move_to([-5.959, -0.606, 0])
         b_otbn.txt.font_size = 11.85
+        b_otbn.txt.move_to([-5.959, -0.606, 0])
         self.add(b_otbn)
         b_hmac = IPBlock('HMAC', theme, width=0.757, height=0.366, fill="#0F2238", stroke="#60A5FA", line_spacing=0.25)
         b_hmac.move_to([-5.112, -0.606, 0])
         b_hmac.txt.font_size = 11.85
+        b_hmac.txt.move_to([-5.112, -0.606, 0])
         self.add(b_hmac)
         b_debug_module = IPBlock('Debug\nModule', theme, width=0.757, height=0.366, fill="#0F2238", stroke="#60A5FA", line_spacing=0.25)
         b_debug_module.move_to([-4.265, -0.606, 0])
         b_debug_module.txt.font_size = 11.85
+        b_debug_module.txt.move_to([-4.265, -0.606, 0])
         self.add(b_debug_module)
         b_spi_host_1 = IPBlock('SPI\nHost 1', theme, width=0.757, height=0.366, fill="#0B1B33", stroke="#3B82F6", line_spacing=0.25)
         b_spi_host_1.move_to([-3.419, -0.606, 0])
         b_spi_host_1.txt.font_size = 11.85
+        b_spi_host_1.txt.move_to([-3.419, -0.606, 0])
         self.add(b_spi_host_1)
         b_aes = IPBlock('AES', theme, width=0.757, height=0.366, fill="#0F2238", stroke="#60A5FA", line_spacing=0.25)
         b_aes.move_to([-5.959, -1.127, 0])
         b_aes.txt.font_size = 11.85
+        b_aes.txt.move_to([-5.959, -1.127, 0])
         self.add(b_aes)
         b_rram = IPBlock('RRAM', theme, width=0.757, height=0.366, fill="#0F2238", stroke="#60A5FA", line_spacing=0.25)
         b_rram.move_to([-5.112, -1.127, 0])
         b_rram.txt.font_size = 11.85
+        b_rram.txt.move_to([-5.112, -1.127, 0])
         self.add(b_rram)
         b_i3c_controller_target = IPBlock('2x I3C\nController\n+ Target', theme, width=0.757, height=0.366, fill="#0B1B33", stroke="#3B82F6", line_spacing=0.25)
         b_i3c_controller_target.move_to([-4.265, -1.127, 0])
         b_i3c_controller_target.txt.font_size = 7.73
+        b_i3c_controller_target.txt.move_to([-4.265, -1.127, 0])
         self.add(b_i3c_controller_target)
         b_usb_device = IPBlock('USB 2.0\nFull-Speed\nDevice', theme, width=0.757, height=0.366, fill="#33121F", stroke="#F472B6", line_spacing=0.25)
         b_usb_device.move_to([-3.419, -1.127, 0])
         b_usb_device.txt.font_size = 8.32
+        b_usb_device.txt.move_to([-3.353, -1.127, 0])
         self.add(b_usb_device)
         b_otp_controller = IPBlock('OTP (Fuse)\nController\n(via RRAM)', theme, width=0.757, height=0.366, fill="#0F2A22", stroke="#34D399", line_spacing=0.25)
         b_otp_controller.move_to([-2.548, 1.681, 0])
         b_otp_controller.txt.font_size = 7.52
+        b_otp_controller.txt.move_to([-2.548, 1.681, 0])
         self.add(b_otp_controller)
         b_life_cycle_controller = IPBlock('Life Cycle\nController', theme, width=0.757, height=0.366, fill="#0F2A22", stroke="#34D399", line_spacing=0.25)
         b_life_cycle_controller.move_to([-2.548, 1.087, 0])
         b_life_cycle_controller.txt.font_size = 10.62
+        b_life_cycle_controller.txt.move_to([-2.548, 1.087, 0])
         self.add(b_life_cycle_controller)
         b_gpio = IPBlock('GPIO (32\nI/Os)', theme, width=0.765, height=0.366, fill="#0F2A22", stroke="#34D399", line_spacing=0.25)
         b_gpio.move_to([-2.544, 0.151, 0])
         b_gpio.txt.font_size = 11.28
+        b_gpio.txt.move_to([-2.544, 0.151, 0])
         self.add(b_gpio)
         b_spi_device = IPBlock('SPI\nDevice', theme, width=0.765, height=0.366, fill="#0F2A22", stroke="#34D399", line_spacing=0.25)
         b_spi_device.move_to([-2.544, -0.273, 0])
         b_spi_device.txt.font_size = 11.85
+        b_spi_device.txt.move_to([-2.478, -0.273, 0])
         self.add(b_spi_device)
         b_uart_4x = IPBlock('4x UART', theme, width=0.765, height=0.366, fill="#0F2A22", stroke="#34D399", line_spacing=0.25)
         b_uart_4x.move_to([-2.544, -0.704, 0])
         b_uart_4x.txt.font_size = 11.85
+        b_uart_4x.txt.move_to([-2.544, -0.704, 0])
         self.add(b_uart_4x)
         b_i2c_3x = IPBlock('3x\nI2C (Host\n+ Device)', theme, width=0.765, height=0.366, fill="#0F2A22", stroke="#34D399", line_spacing=0.25)
         b_i2c_3x.move_to([-2.544, -1.127, 0])
         b_i2c_3x.txt.font_size = 7.73
+        b_i2c_3x.txt.move_to([-2.544, -1.127, 0])
         self.add(b_i2c_3x)
         b_peri_tlul_crossbar = IPBlock('TL-UL\nCross\nbar', theme, width=0.570, height=3.175, fill="#0F2A22", stroke="#34D399", line_spacing=0.25)
         b_peri_tlul_crossbar.move_to([-1.681, 0.277, 0])
         b_peri_tlul_crossbar.txt.font_size = 11.85
+        b_peri_tlul_crossbar.txt.move_to([-1.681, 0.277, 0])
         self.add(b_peri_tlul_crossbar)
         b_alert_handler = IPBlock('Alert\nHandler', theme, width=0.757, height=0.366, fill="#0F2A22", stroke="#34D399", line_spacing=0.25)
         b_alert_handler.move_to([-0.814, 1.681, 0])
         b_alert_handler.txt.font_size = 11.85
+        b_alert_handler.txt.move_to([-0.814, 1.681, 0])
         self.add(b_alert_handler)
         b_timers = IPBlock('Timers', theme, width=0.757, height=0.366, fill="#0F2A22", stroke="#34D399", line_spacing=0.25)
         b_timers.move_to([-0.814, 1.087, 0])
         b_timers.txt.font_size = 11.85
+        b_timers.txt.move_to([-0.814, 1.087, 0])
         self.add(b_timers)
         b_clk_rst_managers_main = IPBlock('Clk/Rst\nManagers', theme, width=0.757, height=0.366, fill="#0F2A22", stroke="#34D399", line_spacing=0.25)
         b_clk_rst_managers_main.move_to([-0.822, -0.273, 0])
         b_clk_rst_managers_main.txt.font_size = 11.51
+        b_clk_rst_managers_main.txt.move_to([-0.822, -0.273, 0])
         self.add(b_clk_rst_managers_main)
         b_pinmux_main = IPBlock('Pinmux', theme, width=0.757, height=0.366, fill="#0F2A22", stroke="#34D399", line_spacing=0.25)
         b_pinmux_main.move_to([-0.822, -0.704, 0])
         b_pinmux_main.txt.font_size = 11.85
+        b_pinmux_main.txt.move_to([-0.822, -0.704, 0])
         self.add(b_pinmux_main)
         b_analog_sensor_top_main = IPBlock('Analog\nSensor Top', theme, width=0.757, height=0.366, fill="#0F2A22", stroke="#34D399", line_spacing=0.25)
         b_analog_sensor_top_main.move_to([-0.822, -1.127, 0])
         b_analog_sensor_top_main.txt.font_size = 10.51
+        b_analog_sensor_top_main.txt.move_to([-0.822, -1.127, 0])
         self.add(b_analog_sensor_top_main)
         b_retention_sram = IPBlock('Retention\nSRAM', theme, width=0.757, height=0.366, fill="#0F2A22", stroke="#34D399", line_spacing=0.25)
         b_retention_sram.move_to([0.277, 1.380, 0])
         b_retention_sram.txt.font_size = 11.85
+        b_retention_sram.txt.move_to([0.277, 1.380, 0])
         self.add(b_retention_sram)
         b_sysrst_controller = IPBlock('Sysrst\nController', theme, width=0.757, height=0.366, fill="#0F2A22", stroke="#34D399", line_spacing=0.25)
         b_sysrst_controller.move_to([1.156, 1.380, 0])
         b_sysrst_controller.txt.font_size = 8.53
+        b_sysrst_controller.txt.move_to([1.222, 1.380, 0])
         self.add(b_sysrst_controller)
         b_sensor_control = IPBlock('Sensor\nControl', theme, width=0.757, height=0.366, fill="#0F2A22", stroke="#34D399", line_spacing=0.25)
         b_sensor_control.move_to([0.285, 0.810, 0])
         b_sensor_control.txt.font_size = 11.85
+        b_sensor_control.txt.move_to([0.351, 0.810, 0])
         self.add(b_sensor_control)
         b_aon_timers = IPBlock('AON\nTimers', theme, width=0.757, height=0.366, fill="#0F2A22", stroke="#34D399", line_spacing=0.25)
         b_aon_timers.move_to([1.156, 0.810, 0])
         b_aon_timers.txt.font_size = 11.85
+        b_aon_timers.txt.move_to([1.222, 0.810, 0])
         self.add(b_aon_timers)
         b_adc_controller = IPBlock('ADC\nController', theme, width=0.757, height=0.366, fill="#0F2A22", stroke="#34D399", line_spacing=0.25)
         b_adc_controller.move_to([0.277, 0.224, 0])
         b_adc_controller.txt.font_size = 8.46
+        b_adc_controller.txt.move_to([0.343, 0.224, 0])
         self.add(b_adc_controller)
         b_power_manager = IPBlock('Power\nManager', theme, width=0.757, height=0.366, fill="#0F2A22", stroke="#34D399", line_spacing=0.25)
         b_power_manager.move_to([1.156, 0.224, 0])
         b_power_manager.txt.font_size = 11.85
+        b_power_manager.txt.move_to([1.222, 0.224, 0])
         self.add(b_power_manager)
         b_clk_rst_managers_aon = IPBlock('Clk/Rst\nManagers', theme, width=0.765, height=0.366, fill="#0F2A22", stroke="#34D399", line_spacing=0.25)
         b_clk_rst_managers_aon.move_to([0.623, -0.273, 0])
         b_clk_rst_managers_aon.txt.font_size = 10.83
+        b_clk_rst_managers_aon.txt.move_to([0.689, -0.273, 0])
         self.add(b_clk_rst_managers_aon)
         b_pinmux_aon = IPBlock('Pinmux', theme, width=0.765, height=0.366, fill="#0F2A22", stroke="#34D399", line_spacing=0.25)
         b_pinmux_aon.move_to([0.623, -0.704, 0])
         b_pinmux_aon.txt.font_size = 11.85
+        b_pinmux_aon.txt.move_to([0.689, -0.704, 0])
         self.add(b_pinmux_aon)
         b_analog_sensor_top_aon = IPBlock('Analog\nSensor\nTop', theme, width=0.765, height=0.366, fill="#0F2A22", stroke="#34D399", line_spacing=0.25)
         b_analog_sensor_top_aon.move_to([0.623, -1.127, 0])
         b_analog_sensor_top_aon.txt.font_size = 7.65
+        b_analog_sensor_top_aon.txt.move_to([0.623, -1.127, 0])
         self.add(b_analog_sensor_top_aon)
         b_padring = IPBlock('Padring (only wires and pad instances)', theme, width=8.075, height=0.301, fill="#22262C", stroke="#9CA3AF", line_spacing=0.25)
         b_padring.move_to([-2.430, -1.974, 0])
         b_padring.txt.font_size = 11.85
+        b_padring.txt.move_to([-2.430, -1.974, 0])
         self.add(b_padring)
 
         # ---- 4. all 40 connections of the picture, one wire each ----
@@ -380,16 +420,16 @@ class EarlgreyIbexUartReadScene(Scene):
         w_c40 = VGroup(w_c40_0_0)
         self.add(w_c40)
 
-        # ---- 5. the story: one banner per step, lighting up what it names ----
-        banner = Banner('Earlgrey: Ibex reads from the 4x UART', theme)
-        banner.move_to([0, 3.6, 0])
-        self.add(banner)
+        # ---- 5. the story: one step caption at a time, lighting up what it names ----
+        caption = Banner('Earlgrey: Ibex reads from the 4x UART', theme)
+        caption.move_to([0, 3.324, 0])
+        self.add(caption)
         self.wait(0.5)
 
-        self.play(banner.update_text('Idle: nothing is happening yet', theme, ACTIVE))
+        self.play(caption.update_text('Idle: nothing is happening yet', theme, ACTIVE))
         self.wait(0.5)
 
-        self.play(banner.update_text('Step 1: Ibex Core sends a read request', theme, ACTIVE))
+        self.play(caption.update_text('Step 1: Ibex Core sends a read request', theme, ACTIVE))
         self.play(b_ibex_core.bg.animate.set_color(ACTIVE), w_c01.animate.set_color(ACTIVE), run_time=0.6)
         pkt = Packet('Read req', REQUEST, theme, width=0.62, height=0.2, font_size=9)
         pkt.move_to([-5.637, 1.107, 0])
@@ -398,7 +438,7 @@ class EarlgreyIbexUartReadScene(Scene):
         self.play(FadeOut(pkt, run_time=0.15))
         self.wait(0.5)
 
-        self.play(banner.update_text('Step 2: The TL-UL Crossbar passes it to the peripheral side', theme, ACTIVE))
+        self.play(caption.update_text('Step 2: The TL-UL Crossbar passes it to the peripheral side', theme, ACTIVE))
         self.play(b_tlul_crossbar.bg.animate.set_color(ACTIVE), w_c18.animate.set_color(ACTIVE), run_time=0.6)
         pkt = Packet('Read req', REQUEST, theme, width=0.62, height=0.2, font_size=9)
         pkt.move_to([-3.040, 0.501, 0])
@@ -407,7 +447,7 @@ class EarlgreyIbexUartReadScene(Scene):
         self.play(FadeOut(pkt, run_time=0.15))
         self.wait(0.5)
 
-        self.play(banner.update_text('Step 3: The peripheral TL-UL Cross bar sends it to the 4x UART', theme, ACTIVE))
+        self.play(caption.update_text('Step 3: The peripheral TL-UL Cross bar sends it to the 4x UART', theme, ACTIVE))
         self.play(b_peri_tlul_crossbar.bg.animate.set_color(ACTIVE), w_c23.animate.set_color(ACTIVE), run_time=0.6)
         pkt = Packet('Read req', REQUEST, theme, width=0.62, height=0.2, font_size=9)
         pkt.move_to([-1.966, -0.704, 0])
@@ -416,11 +456,11 @@ class EarlgreyIbexUartReadScene(Scene):
         self.play(FadeOut(pkt, run_time=0.15))
         self.wait(0.5)
 
-        self.play(banner.update_text('Step 4: The 4x UART answers', theme, ACTIVE))
+        self.play(caption.update_text('Step 4: The 4x UART answers', theme, ACTIVE))
         self.play(b_uart_4x.bg.animate.set_color(ACTIVE), w_c23.animate.set_color(ACTIVE), run_time=0.6)
         self.wait(0.5)
 
-        self.play(banner.update_text('Step 5: The response travels back over the same links', theme, ACTIVE))
+        self.play(caption.update_text('Step 5: The response travels back over the same links', theme, ACTIVE))
         self.play(b_peri_tlul_crossbar.bg.animate.set_color(ACTIVE), b_tlul_crossbar.bg.animate.set_color(ACTIVE), w_c23.animate.set_color(ACTIVE), w_c18.animate.set_color(ACTIVE), w_c01.animate.set_color(ACTIVE), run_time=0.6)
         pkt = Packet('response', RESPONSE, theme, width=0.62, height=0.2, font_size=9)
         pkt.move_to([-2.161, -0.704, 0])
@@ -434,7 +474,7 @@ class EarlgreyIbexUartReadScene(Scene):
         self.play(FadeOut(pkt, run_time=0.15))
         self.wait(0.5)
 
-        self.play(banner.update_text('Step 6: Ibex Core receives the data. Read complete', theme, ACTIVE))
+        self.play(caption.update_text('Step 6: Ibex Core receives the data. Read complete', theme, ACTIVE))
         self.play(b_ibex_core.bg.animate.set_color(ACTIVE), w_c01.animate.set_color(ACTIVE), run_time=0.6)
         pkt = Packet('response', RESPONSE, theme, width=0.62, height=0.2, font_size=9)
         pkt.move_to([-5.637, 0.749, 0])

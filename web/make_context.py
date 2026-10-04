@@ -28,3 +28,4 @@ import sys
 sys.path.insert(0, str(root))
 from ipmotion.emit import emit  # noqa: E402
 (out / "25_example_earlgrey.txt").write_text(emit("bench/stories/earlgrey_ibex_uart_read.yaml"), encoding="utf-8")
+(out / "26_example_darjeeling.txt").write_text(emit("bench/stories/darjeeling_ibex_uart_read.yaml"), encoding="utf-8")
