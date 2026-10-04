@@ -11,6 +11,7 @@
 <a class="btn" href="#generator">Open the generator</a></div></section>
 
 <h2>How it works, in 17 seconds</h2>
+<p class="note"><strong>No key and no setup needed to look around.</strong> The video below and every example on this page play as they are. A key is only needed if you want the generator to write a script for your own diagram.</p>
 <p class="note">This explainer was made by IPMotion itself &mdash; hand-written against the same <code>ipmotion_lib</code> the generator writes against, and passed by the same geometric linter that checks generated scripts, with zero errors and zero warnings. The product explaining itself.</p>
 <video class="explainer" src="assets/video/how-ipmotion-works.mp4" autoplay muted loop playsinline controls preload="metadata" poster="" aria-label="How IPMotion works, animated"></video>
 <h2>What IPMotion draws</h2>
@@ -31,7 +32,16 @@
 <div class="row"><div><label for="provider">Provider</label><select id="provider"><option value="gemini">Google Gemini</option><option value="anthropic">Anthropic Claude</option></select></div>
 <div><label for="model">Model</label><input id="model" autocomplete="off"></div></div>
 <label for="key">API key</label><input id="key" type="password" autocomplete="off" placeholder="stored in this browser only">
-<p class="note">Saved in your browser's localStorage and sent only to the provider you picked. Anyone with access to this browser profile, or any script on this site's origin, could read it. Use a key with a spend cap. <button type="button" class="alt" id="forget">Forget key</button></p>
+<p class="note">Saved in this browser only, and sent only to the provider you picked. <button type="button" class="alt" id="forget">Forget key</button></p>
+<details class="setup" open><summary><strong>Why is a website asking me for my API key?</strong></summary>
+<ul class="steps">
+<li><strong>There is no server here to send it to.</strong> This page is a static file on GitHub Pages. No backend, no database, no account. Nothing exists on our side that could receive or store a key.</li>
+<li><strong>The request goes straight from your browser to Google or Anthropic.</strong> Not through us. Press F12, open the Network tab, and press Generate: you will see exactly one request, and it goes to them.</li>
+<li><strong>"Stored in your browser" means YOUR computer.</strong> It is saved in this browser profile on this machine so you do not retype it. It never reaches the author's browser, because there is no channel between them. <strong>Forget key</strong> deletes it.</li>
+<li><strong>Why not just use the author's key?</strong> Every generation costs money at the provider. A shared key would be drained by strangers within a day. Your own key means you pay your provider directly, at their price, under your own spend cap &mdash; and nobody can rate-limit you but them.</li>
+<li><strong>Don't want it stored at all?</strong> Paste it, press Generate, then press Forget key. Or read <a href="https://github.com/yashv373/IPMotion/blob/main/web/app.js">app.js</a> first &mdash; it is 120 lines and it is the only script on this page.</li>
+</ul>
+<p class="note">Honest risk, unchanged: anything saved in a browser can be read by anyone using that browser profile, or by any script served from this origin. Use a key with a spend cap, and remove it when you are done.</p></details>
 <label for="story">Story / prompt</label><textarea id="story" placeholder="Example: The CPU sends a read request to the UART through the crossbar; the response comes back the same way. Show it in 6 steps."></textarea>
 <label for="diagram">Your block diagram (optional, but it is what makes the result good)</label><p class="note">List the blocks, any power or clock domains, and what connects to what. <strong>Write every name exactly as you want it drawn</strong> &mdash; the model is told to copy your words character for character, so "Main SRAM" and "main sram" give different pictures.</p><textarea id="diagram" placeholder="Example:&#10;Main power domain:&#10;  Ibex Core (RV32IMCB)&#10;  Main SRAM&#10;  Main TL-UL Crossbar&#10;&#10;Wiring:&#10;  Ibex Core (RV32IMCB) -> Main TL-UL Crossbar&#10;  Main TL-UL Crossbar <-> Main SRAM"></textarea>
 <input id="file" type="file" accept=".yaml,.yml,.txt,.md,.json" aria-label="Load diagram file">
