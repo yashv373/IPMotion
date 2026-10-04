@@ -508,3 +508,25 @@ different size from the example) and a round-robin arbiter FSM (a different mach
 **A trap worth writing down:** `.gitignore` has no trailing comments. `!web/assets/video/*.mp4   # comment` made
 the pattern the whole line, so the exception never matched and a green Pages deploy served a 404 video. Twice.
 Always curl the live URL after deploying.
+
+## Wiring diagnosed, and a rule aimed at it (2026-10-05)
+
+Before writing another wiring prompt, the earlier suspicion was checked: are wires missing, or drawn and failing
+the endpoint tolerance? **No quota needed -- the generated scripts are kept.** Counting the last run's script:
+
+- the input listed **32 connections**; the script contained **21 arrow objects**;
+- fidelity scored **19/32**, so **19 of the 21 it drew were correct**;
+- `Connection(` and `Line(` appear **zero** times -- it only ever uses `Arrow`.
+
+So wires are genuinely **absent, not mis-anchored**. The model does not draw them badly; it stops early. That is
+a completeness failure, which is the same shape as the naming failure that one blunt rule fixed.
+
+**RULE 1 added**, directly above the old rule list and quoting the measurement back at the model: go through the
+wiring list one line at a time, one arrow per line, if the user lists 32 connections the script contains 32
+arrow objects, count them before finishing. Prompt grows to 46k characters.
+
+**Honest caveat on the next measurement:** the pending 3-rep run will now be measuring the library fit, the
+pacing rule AND this wiring rule together, against the `+ strict names` row. If wires move sharply, RULE 1 is
+the likely cause since nothing else targets them; if they do not, the rule failed and should be reverted rather
+than elaborated. Attribution is muddier than it should be -- the clean alternative was to leave the rule out
+overnight, which would have wasted the next session's first run.

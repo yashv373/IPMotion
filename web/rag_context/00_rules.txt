@@ -12,6 +12,14 @@ edge label you write MUST be the exact, character-for-character string from the 
 In hardware documentation a name is a pointer, not prose. Paraphrasing is a fatal error: the checker counts the
 renamed item as BOTH missing AND extra, so one rewritten word costs you twice.
 
+RULE 1 -- DRAW EVERY CONNECTION. COUNT THEM.
+Measured on a real run: the user listed 32 connections and the script drew 21. Of the 21 it drew, 19 were
+correct -- so the problem is not that your wires are wrong, it is that you stop early.
+  - Go through the user's wiring list ONE LINE AT A TIME and emit one arrow for each. Do not summarise, do not
+    skip a repeated pattern, do not decide a connection is implied.
+  - If the user lists 32 connections, your script contains 32 arrow objects. Count them before you finish.
+  - A diagram missing a third of its wires is wrong even if every block is perfect.
+
 RULES (follow exactly):
 1. Start with `from manim import *` then `from ipmotion_lib import *`.
 2. NEVER set config.pixel_width, config.pixel_height or config.frame_width.
