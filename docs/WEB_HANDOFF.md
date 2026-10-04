@@ -3,6 +3,16 @@
 Written 2026-10-04 by the web-track session. Read this before touching `web/` or anything it mirrors.
 Full plan and decisions: docs/WEB_UI_SPEC.md. The Python engine (`ipmotion/`, `ipmotion_lib.py`) was NOT changed.
 
+## How the main builder must treat web/ (user decision, 2026-10-04)
+**The website is the surface the user judges progress by.** From here on, a milestone is not done until the
+site shows it. `web/` is kept in sync in the SAME commit as the engine change, not left for a later session:
+- `ipmotion_lib.py` or `gold_examples/axi_read_handshake.py` changed -> re-run `python web/make_context.py`.
+- Lint thresholds, banned constructs or the system prompt changed -> hand-edit `rag_context/00_rules.txt`.
+- A milestone finished -> add its row to `web/changelog.html`, in the same plain words as docs/PROGRESS.md.
+- A new chip or example rendered -> add its card and GIF to the gallery in `web/index.html`.
+- **Pushing a rebuilt `bench/report.html` publishes it.** The Pages workflow fires on `bench/report.html` as
+  well as `web/**`, so a report rebuild is an outward-facing change. Expect it, or do not push the report.
+
 ## What exists
 A static, zero-backend site in `web/`, deployed by `.github/workflows/pages.yml` (pushes touching `web/**` or
 `bench/report.html`; the workflow copies `bench/report.html` into the artifact as `report.html`).
@@ -47,7 +57,7 @@ The three pages are plain hand-edited HTML with duplicated header/footer. No bui
 ## Not done / not verified
 - No real LLM call has been tested (needs a key). Pages deploy and the report link not yet confirmed live.
 - The Darjeeling GIF shows the banner text mid-change in some frames (the known "text at a keyframe can be caught mid-change" limit).
-- Gallery text and changelog rows are hand-copied from docs/PROGRESS.md; they will go stale. Peppermint is not in the gallery (M1.7 unfinished).
+- Gallery text and changelog rows are hand-copied from docs/PROGRESS.md, so they go stale unless the rule above is kept. Nothing enforces it yet: two cheap tests would (rag_context holds no truth-file chip name; 20_example_axi.txt still matches the gold file).
 - Regenerate GIFs: `python -m manim render -ql --format gif --fps 12 --media_dir <scratch> <file> <Scene>`, then ffmpeg
   down to 480px/5fps/16 colours (raw output is ~30 MB each).
 
