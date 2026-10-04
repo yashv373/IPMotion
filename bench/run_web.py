@@ -130,8 +130,19 @@ def main() -> None:
     ap.add_argument("--reps", type=int, default=1)
     a = ap.parse_args()
     spec = make_full_spec(load_story(a.spec_story))
-    results = [run_once(a.diagram, a.story, spec, r) for r in range(1, a.reps + 1)]
-    clean = sum(1 for r in results if r.get("status") == "runs clean")
+    results = []
+    for r in range(1, a.reps + 1):
+        try:
+            results.append(run_once(a.diagram, a.story, spec, r))
+        except C.DailyQuotaError as exc:
+            # DailyQuotaError is a BaseException on purpose, so `except Exception` cannot swallow it. Stop
+            # cleanly and still report the reps that did finish, instead of losing them all to a traceback.
+            print(f"[web] rep {r}: daily quota exhausted, stopping here -- {str(exc)[:150]}")
+            break
+    if not results:
+        print("[web] no runs completed.")
+        return
+    clean = sum(1 for x in results if x.get("status") == "runs clean")
     print(f"\n[web] BASELINE over {len(results)} run(s): {clean} came out clean with no human help.")
 
 

@@ -392,3 +392,71 @@ Written onto the site rather than left as a plan:
 
 Deliberately not claimed: that the repair loop runs in the browser. It does not. It exists in the local
 benchmark harness only, and both pages say so.
+
+## Library guarantees, pacing, and two new example shapes (2026-10-05)
+
+**The user's question:** the demo looked shabby -- overflowing and misaligned text, wrong wiring, too fast to
+read. Is the answer more polished examples in the RAG, or something else?
+
+**Answer, from our own measurements: something else.** Adding a second big chip example (Darjeeling, 630 lines)
+had already made wiring WORSE (18.7 -> 16.0) while doubling the prompt. A single RULE (copy names exactly) then
+did what no example had: blocks and regions both reached their ceiling. Examples teach a tendency; they do not
+guarantee anything.
+
+**The actual cause of the overflowing titles, found by reading the library:** `IPBlock` shrinks its title to fit
+its box. `DomainGroup` never did -- fixed `font_size=24`, no wrap, no shrink. That is precisely why "Main power
+and clock domain" sat across Ibex Core and the AON title ran off the frame. More generally: **every quality
+guarantee we built lives in `diagram.py`, where a generated script cannot reach it.** Wrapping, header
+clearance, one common font size, wires routed around blocks -- all of it protects the engine's renders and none
+of it protects the generator's. We had been polishing the path the product does not use.
+
+**Fixes**
+- `DomainGroup` now fits its own title (up to three lines, shrunk into the header strip, never enlarged, so a
+  title that already fitted is byte-identical). `diagram.py` passes `fit=False` because it has better
+  header-aware logic and its three chip renders are approved; 198 tests confirm they are unchanged.
+- Pacing is now a rule of its own: `run_time >= 0.8`, `wait(1.2)` per step, 2.5s final hold, with the target
+  stated plainly -- a 6-step story should last about 25 seconds, not 8.
+
+**Measured (1 rep only; the daily Gemini free quota of 20 requests ran out mid-run)**
+
+| context | lint | spec | blocks | wires | regions | extras |
+|---|---|---|---|---|---|---|
+| 1 example (AXI only) | 13.3 | 53.3 | 29.3/33 | 16.0/32 | 0.0/3 | 15.7 |
+| + Earlgrey | 16.0 | 42.3 | 30.0/33 | 18.7/32 | 0.0/3 | 8.3 |
+| + Earlgrey + Darjeeling | 7.5 | 44.0 | 30.5/33 | 16.0/32 | 0.0/3 | 7.5 |
+| + strict names | 19.0 | 49.0 | 31.0/33 | 10.0/32 | 2.0/3 | 9.5 |
+| **+ library fit & pacing** | 22.0 | **37.0** | 31.0/33 | **19.0/32** | 2.0/3 | **6.0** |
+
+Best spec errors, best wires and fewest extras of any configuration so far, with blocks and regions still at
+their ceiling. Lint errors are the one thing that went up (19 -> 22) and that is unexplained. **n=1, so none of
+this is solid** -- the honest read is "promising, unconfirmed", and it must be re-run on three reps when the
+quota resets.
+
+**Two new gold examples, both 0 lint errors and 0 warnings**
+- `gold_examples/systolic_array_mac.py`: 4x4 output-stationary MAC array. The first example that is not a
+  floorplan. Teaches sixteen blocks from a loop rather than sixteen definitions (our one crashed run was a
+  749-line script that broke syntax), grid coordinates computed from an origin and a pitch, and a whole diagonal
+  animating in ONE `play()` call.
+- `gold_examples/mesi_cache_fsm.py`: the MESI state machine. Circular nodes carrying their own labels, curved
+  transitions, a self-loop. Took three passes to read well; the last fault was invisible to lint and obvious to
+  the eye -- labels on a vertical arc were cleared by their height instead of their width.
+
+Both are registered `indexable` in MANIFEST.toml but are **deliberately NOT in the live prompt yet**, because
+adding them unmeasured is the mistake we already made with Darjeeling. They need measurement, and new shapes
+also need held-out exams of their own shape before their value can be seen at all.
+
+**`docs/SOURCES.md`**: every reference diagram and animated structure now carries a citation, including the
+OpenTitan diagrams that were published on the site with no attribution at all (lowRISC, Apache-2.0). Rule
+written down: a new animation takes its structure from a citable source and lands in that file the same commit.
+
+**Website**: new logo and icons throughout (white background turned to real transparency, wordmark lifted so it
+reads on dark, chip glyph alone for the favicon); every image given explicit width and height so the page does
+not reflow; buttons given hover, active and focus states, which they had never had; focus-visible rings, a
+blurred sticky header, input focus rings, a web manifest. The two new examples are in the gallery as video with
+their citations, and the generated-Peppermint clip is now video instead of a 16-colour GIF.
+
+**Harness fix**: `DailyQuotaError` is a `BaseException` by design, so `except Exception` could not catch it and a
+quota stop threw away the reps that had already completed. `run_web.py` now stops cleanly and still reports them.
+
+**Next:** re-run the 3-rep measurement when the quota resets; then measure the systolic example going into the
+prompt, with a held-out exam of its own shape. Wiring correctness (19/32) is still the open quality problem.
