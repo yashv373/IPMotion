@@ -1,18 +1,18 @@
 <!doctype html>
 <html lang="en" data-theme="dark"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>IPMotion Generator</title><meta name="description" content="IPMotion: describe a hardware block diagram story, get a Manim animation script. Bring your own API key; nothing runs on our servers.">
+<link rel="icon" href="favicon.ico" sizes="any"><link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png"><link rel="apple-touch-icon" href="assets/apple-touch-icon.png"><meta name="theme-color" content="#0b0d12"><meta property="og:title" content="IPMotion Generator"><meta property="og:image" content="assets/logo.png">
 <link rel="stylesheet" href="style.css"></head><body>
-<header><div class="wrap"><a class="brand" href="index.html">IPMotion</a><nav><a href="index.html" aria-current=page>Generator</a><a href="how-it-works.html">How it works</a><a href="changelog.html">Changelog</a></nav>
+<header><div class="wrap"><a class="brand" href="index.html" aria-label="IPMotion home"><img src="assets/logo.png" alt="IPMotion" height="38"></a><nav><a href="index.html" aria-current=page>Generator</a><a href="how-it-works.html">How it works</a><a href="changelog.html">Changelog</a></nav>
 <span class="credit">Ideated by Yashvardhan Singh | Development by Claude Code</span></div></header>
 <main class="wrap">
-<section class="hero"><h1>Hardware block diagrams, animated.</h1>
+<section class="hero"><img class="hero-logo" src="assets/logo.png" alt="IPMotion by Yashvardhan Singh" width="440"><h1>Hardware block diagrams, animated.</h1>
 <p>IPMotion draws chip and IP-block diagrams in Manim and plays a story over them: a read request travelling through a crossbar, a handshake between master and slave. Describe the story, paste your block diagram, and get a Python script you run on your own machine. Bring your own LLM key. We run nothing.</p>
 <a class="btn" href="#generator">Open the generator</a></section>
 
 <h2>What it can make</h2><div class="grid">
 <div class="card"><img src="assets/gifs/darjeeling.gif" alt="Darjeeling animation" loading="lazy" onerror="this.outerHTML='<div class=ph>GIF coming: Darjeeling</div>'"><h3>Darjeeling</h3><p class="note">OpenTitan Darjeeling, 49 blocks and 4 regions drawn from the reference picture. Story: Ibex reads from the UART / I2C.</p></div>
 <div class="card"><img src="assets/gifs/earlgrey.gif" alt="Earlgrey animation" loading="lazy" onerror="this.outerHTML='<div class=ph>GIF coming: Earlgrey</div>'"><h3>Earlgrey</h3><p class="note">OpenTitan Earlgrey, 40 blocks. The same engine on a different chip. Story: Ibex reads from the 4x UART.</p></div>
-<div class="card"><img src="assets/gifs/peppermint.gif" alt="Peppermint animation" loading="lazy" onerror="this.outerHTML='<div class=ph>GIF coming: Peppermint</div>'"><h3>Peppermint</h3><p class="note">OpenTitan Peppermint, 24 blocks and 9 edge labels across two power domains. A third chip on the same engine. Story: Ibex reads from the Retention SRAM.</p></div>
 <div class="card"><img src="assets/gifs/axi.gif" alt="AXI read handshake animation" loading="lazy" onerror="this.outerHTML='<div class=ph>GIF coming: AXI read handshake</div>'"><h3>AXI read handshake</h3><p class="note">A small master/slave example: address, data and valid/ready channels, step by step.</p></div>
 </div>
 
@@ -40,9 +40,9 @@ manim -pql script.py YourSceneName
 # optional geometric check:
 python -m ipmotion.lint script.py</pre>
 <p class="note">Replace <code>YourSceneName</code> with the class name in the script. No LaTeX needed. Use <code>-qh</code> for a sharper render.</p></div></section>
-<h2>About</h2><p class="card">IPMotion turns a hardware block diagram and a short story into a Manim animation.
+<h2>About</h2><p class="card"><img class="about-logo" src="assets/icon-192.png" alt="" width="64" height="64">IPMotion turns a hardware block diagram and a short story into a Manim animation.
 <strong>Ideated by Yashvardhan Singh | Development by Claude Code</strong>. Source: <a href="https://github.com/yashv373/IPMotion">github.com/yashv373/IPMotion</a>.</p>
 </main>
-<footer><div class="wrap"><p><strong>Ideated by Yashvardhan Singh | Development by Claude Code</strong></p>
+<footer><div class="wrap"><img class="foot-logo" src="assets/logo.png" alt="IPMotion" height="44"><p><strong>Ideated by Yashvardhan Singh | Development by Claude Code</strong></p>
 <p class="note">Static site. No server, no analytics, no tracking. Your API key never leaves your browser except to your chosen LLM provider.</p></div></footer>
 <script src="app.js"></script></body></html>

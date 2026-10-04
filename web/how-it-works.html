@@ -1,8 +1,9 @@
 <!doctype html>
 <html lang="en" data-theme="dark"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>How IPMotion Works</title><meta name="description" content="IPMotion: describe a hardware block diagram story, get a Manim animation script. Bring your own API key; nothing runs on our servers.">
+<link rel="icon" href="favicon.ico" sizes="any"><link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png"><link rel="apple-touch-icon" href="assets/apple-touch-icon.png"><meta name="theme-color" content="#0b0d12"><meta property="og:title" content="How IPMotion Works"><meta property="og:image" content="assets/logo.png">
 <link rel="stylesheet" href="style.css"></head><body>
-<header><div class="wrap"><a class="brand" href="index.html">IPMotion</a><nav><a href="index.html">Generator</a><a href="how-it-works.html" aria-current=page>How it works</a><a href="changelog.html">Changelog</a></nav>
+<header><div class="wrap"><a class="brand" href="index.html" aria-label="IPMotion home"><img src="assets/logo.png" alt="IPMotion" height="38"></a><nav><a href="index.html">Generator</a><a href="how-it-works.html" aria-current=page>How it works</a><a href="changelog.html">Changelog</a></nav>
 <span class="credit">Ideated by Yashvardhan Singh | Development by Claude Code</span></div></header>
 <main class="wrap">
 <section class="hero"><h1>How it works</h1><p>IPMotion treats a diagram animation as something a program can measure. A model proposes; geometry and a renderer check. This page describes the full local pipeline, and what this website skips.</p></section>
@@ -38,9 +39,9 @@
 <h2>What this website does</h2>
 <p>Context stuffing: it fetches four static text files (rules, library API, one verified gold example, notes), appends your story and diagram text, and sends one request from your browser to your provider. <strong>No lint, no conformance check and no repair loop run here.</strong> Run <code>python -m ipmotion.lint script.py</code> locally to get them.</p>
 <p><a class="btn" href="index.html#generator">Try the generator</a></p>
-<h2>About</h2><p class="card">IPMotion turns a hardware block diagram and a short story into a Manim animation.
+<h2>About</h2><p class="card"><img class="about-logo" src="assets/icon-192.png" alt="" width="64" height="64">IPMotion turns a hardware block diagram and a short story into a Manim animation.
 <strong>Ideated by Yashvardhan Singh | Development by Claude Code</strong>. Source: <a href="https://github.com/yashv373/IPMotion">github.com/yashv373/IPMotion</a>.</p>
 </main>
-<footer><div class="wrap"><p><strong>Ideated by Yashvardhan Singh | Development by Claude Code</strong></p>
+<footer><div class="wrap"><img class="foot-logo" src="assets/logo.png" alt="IPMotion" height="44"><p><strong>Ideated by Yashvardhan Singh | Development by Claude Code</strong></p>
 <p class="note">Static site. No server, no analytics, no tracking. Your API key never leaves your browser except to your chosen LLM provider.</p></div></footer>
 </body></html>

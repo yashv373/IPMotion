@@ -30,3 +30,12 @@ pre{background:#05050a;color:#d8e0f0;border:1px solid var(--line);border-radius:
 table{border-collapse:collapse;width:100%}td,th{border-bottom:1px solid var(--line);padding:8px;text-align:left;vertical-align:top}
 footer{border-top:1px solid var(--line);margin-top:60px;padding:24px 0;color:var(--mute);text-align:center}
 code{background:var(--panel);padding:1px 5px;border-radius:4px}
+.brand{display:flex;align-items:center}.brand img{height:38px;width:auto;display:block;transition:filter .25s,transform .25s}
+.brand:hover img{filter:drop-shadow(0 0 8px rgba(0,180,230,.6));transform:translateY(-1px)}
+.hero-logo{display:block;max-width:100%;height:auto;margin-bottom:18px;filter:drop-shadow(0 0 28px rgba(0,170,230,.28));animation:rise .8s ease-out both}
+@keyframes rise{from{opacity:0;transform:translateX(-14px)}to{opacity:1;transform:none}}
+.foot-logo{display:block;margin:0 auto 12px;width:auto;opacity:.9}
+.about-logo{float:left;margin:0 14px 4px 0;filter:drop-shadow(0 0 10px rgba(0,170,230,.35))}
+.card::after{content:"";display:block;clear:both}
+@media (prefers-reduced-motion:reduce){.hero-logo{animation:none}.brand img{transition:none}}
+@media (max-width:640px){.credit{display:none}}
