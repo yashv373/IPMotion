@@ -52,11 +52,16 @@ label_chars:
   noise_source_bits: 17
   memory_bus_ingress: 18
   outbound_message_irq: 11
-  debug_module_interface: 14
+  debug_module_interface: 15
   alerts_from_soc: 15
   power_handshake: 15
   soc_cpu_reset: 13
   life_cycle_function_control: 16
 extras:
   dual_lockstep_shadow: [166, 121, 349, 207]
-routes: {}
+routes:
+  # The picture draws ONE thick line up from the bottom edge that forks to Debug Module and Life Cycle
+  # Controller. Each spec connection has to be its own wire (recorded decision: no shared trunk), so the fork is
+  # drawn as two wires that follow the same shape, kept far enough apart not to be read as one long wire.
+  c23: {route: [[455, 514], [455, 505], [412, 505], [412, 478]]}
+  c24: {route: [[471, 514], [471, 505], [514, 505], [514, 478]]}

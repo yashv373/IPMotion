@@ -20,6 +20,7 @@ STORY = "bench/stories/earlgrey_ibex_uart_read.yaml"
 SPEC = make_full_spec(load_story(STORY))
 TRUTH, LAYOUT = load("opentitan_earlgrey")
 BOTH = ["opentitan_darjeeling", "opentitan_earlgrey"]
+CHIPS = BOTH + ["opentitan_peppermint"]        # the swatch test needs a chip that has swatches; the rest do not
 
 
 def test_earlgrey_spec_is_the_whole_diagram_and_validates():
@@ -36,7 +37,7 @@ def test_every_block_and_region_of_the_truth_file_has_a_box():
         assert r["id"] in LAYOUT["regions"], r["id"]
 
 
-@pytest.mark.parametrize("name", BOTH)
+@pytest.mark.parametrize("name", CHIPS)
 def test_no_wire_is_drawn_over_a_block_it_does_not_belong_to(name):
     d = Diagram(name, panel=False)
     bad = []
@@ -63,7 +64,7 @@ def test_no_block_title_runs_into_its_legend_swatches(name):
         assert blk.txt.font_size == pytest.approx(before), bid
 
 
-@pytest.mark.parametrize("name", BOTH)
+@pytest.mark.parametrize("name", CHIPS)
 def test_the_drawing_stays_inside_the_frame_and_clear_of_the_panel(name):
     from manim import config
     d = Diagram(name)

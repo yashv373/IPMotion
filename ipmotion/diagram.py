@@ -63,6 +63,16 @@ def _partitions(words, k):
             yield [" ".join(words[:i])] + rest
 
 
+def _wrap_to_lines(label: str, n: int) -> str:
+    """The label broken over at most n lines, with the lines as long as that allows."""
+    longest = max((len(w) for w in label.split()), default=1)
+    for budget in range(longest, len(label) + 1):
+        lines = textwrap.wrap(label, budget)
+        if len(lines) <= n:
+            return "\n".join(lines)
+    return label
+
+
 _METRICS: dict = {}
 
 
@@ -160,14 +170,23 @@ class Diagram(VGroup):
         self._margin_wraps = self._wrap_margin_labels()
         if height_units is None:
             # fit the reference in the frame height AND in the width left over once the panel has its share,
-            # so a landscape reference (Earlgrey) is not pushed out past the panel
-            self.u = (config.frame_height - 2 * FRAME_MARGIN) / h_px
-            room = config.frame_width - 2 * FRAME_MARGIN - self.PANEL_GAP - self.MIN_PANEL_W - self._margin_boxes()
-            self.u = min(self.u, room / w_px)
+            # so a landscape reference (Earlgrey) is not pushed out past the panel. The gutter the margin labels
+            # need depends on the scale, and the scale on the gutter, so settle the two together: sizing the
+            # panel from one scale and placing it from another leaves it narrower than MIN_PANEL_W.
+            fit_h = (config.frame_height - 2 * FRAME_MARGIN) / h_px
+            self.u = fit_h
+            for _ in range(5):
+                gutter = self._margin_boxes()
+                u = min(fit_h, (config.frame_width - 2 * FRAME_MARGIN - self.PANEL_GAP - self.MIN_PANEL_W
+                                - gutter) / w_px)
+                if abs(u - self.u) < 1e-9:
+                    break
+                self.u = u
         else:
             self.u = height_units / h_px
+            gutter = self._margin_boxes()
         if center_x is None:                      # left-align the drawing, leaving a gutter for the margin labels
-            center_x = -half_w + FRAME_MARGIN + self._margin_boxes() + w_px * self.u / 2
+            center_x = -half_w + FRAME_MARGIN + gutter + w_px * self.u / 2
         self.cx = center_x
         self._panel_x0 = center_x + w_px * self.u / 2 + self.PANEL_GAP
         self._panel_x1 = half_w - FRAME_MARGIN
@@ -225,29 +244,52 @@ class Diagram(VGroup):
         return max([b[2] for b in self.layout["blocks"].values()] +
                    [r[2] for r in self.layout["regions"].values()])
 
+    def _drawing_bottom(self) -> float:
+        """Lowest pixel of anything drawn from the reference."""
+        return max([b[3] for b in self.layout["blocks"].values()] +
+                   [r[3] for r in self.layout["regions"].values()])
+
+    def _label_side(self, box) -> str:
+        """Which margin a free label lives in. Left is the default: that is where Darjeeling prints all of
+        its, and its boxes overlap the drawing's own left edge, so left cannot be told from position alone --
+        only the other two sides can."""
+        if box[0] >= self._drawing_right():
+            return "right"
+        if box[1] >= self._drawing_bottom():
+            return "bottom"
+        return "left"
+
     def _margin_boxes(self) -> float:
-        """Give each margin label the pixel box its text really needs, keeping the right edge where the
-        reference put it (that is where its wire arrives). -> how far the widest one reaches left of the
-        drawing, in scene units: the gutter the drawing has to be inset by."""
+        """Give each margin label the pixel box its text really needs. A left label is pulled out into the
+        gutter, keeping the right edge the reference gave it (that is where its wire arrives); a label at the
+        bottom or right edge (Peppermint prints them there) keeps its place and grows about it. -> how far the
+        widest left one reaches past the drawing, in scene units: the gutter the drawing has to be inset by."""
         cw, pitch, gh = text_metrics()
         overhang = 0.0
         if not hasattr(self, "_label_boxes0"):                      # keep the originals: this may run twice
             self._label_boxes0 = {k: list(v) for k, v in self.layout.get("labels", {}).items()}
         for lid, wrapped in self._margin_wraps.items():
             box = self._label_boxes0[lid]
-            if box[2] > self._drawing_left():
-                # Not in the left gutter: Peppermint also prints labels at the bottom and right edges. The
-                # reference image already leaves room for those, so they keep the box the picture gave them.
-                continue
+            side = self._label_side(box)
+            # a gutter label is given all the room it needs; the other two sides only have what the picture
+            # left around the drawing, so they are sized for the floor instead
+            font = MARGIN_LABEL_FONT if side == "left" else MARGIN_LABEL_MIN
             lines = wrapped.split("\n")
-            w = max(len(l) for l in lines) * cw * MARGIN_LABEL_FONT / self.u          # in image pixels
-            h = ((len(lines) - 1) * pitch + gh) * MARGIN_LABEL_FONT / self.u
-            # keep the label out of the drawing: its right edge stops short of the outermost border, so its
-            # arrow leaves the drawing to reach it, exactly as the reference shows
+            w = max(len(l) for l in lines) * cw * font / self.u                       # in image pixels
+            h = ((len(lines) - 1) * pitch + gh) * font / self.u
             cy = (box[1] + box[3]) / 2
-            right = min(box[2], self._drawing_left()) - 0.12 / self.u      # 0.12 scene units of air
-            self.layout["labels"][lid] = [right - w, cy - h / 2, right, cy + h / 2]
-            overhang = max(overhang, -(right - w) * self.u)
+            if side == "left":
+                # keep the label out of the drawing: its right edge stops short of the outermost border, so its
+                # arrow leaves the drawing to reach it, exactly as the reference shows
+                right = min(box[2], self._drawing_left()) - 0.12 / self.u      # 0.12 scene units of air
+                self.layout["labels"][lid] = [right - w, cy - h / 2, right, cy + h / 2]
+                overhang = max(overhang, -(right - w) * self.u)
+            elif side == "right":
+                left = max(box[0], self._drawing_right() + 0.12 / self.u)
+                self.layout["labels"][lid] = [left, cy - h / 2, left + w, cy + h / 2]
+            else:                                   # bottom: keep its place, grow about its own centre
+                cx = (box[0] + box[2]) / 2
+                self.layout["labels"][lid] = [cx - w / 2, cy - h / 2, cx + w / 2, cy + h / 2]
         return overhang + 0.06 if self._margin_wraps else 0.15
 
     # ---------------------------------------------------------------- geometry
@@ -257,6 +299,15 @@ class Diagram(VGroup):
     def _box(self, b):
         (x0, y0), (x1, y1) = self.P(b[0], b[1])[:2], self.P(b[2], b[3])[:2]
         return (x0 + x1) / 2, (y0 + y1) / 2, abs(x1 - x0), abs(y1 - y0)
+
+    def _header_height(self, region_box, h: float) -> float:
+        """How tall the strip above a region's own blocks is, in scene units: all the room its title has before
+        it starts sitting on them."""
+        inside = [b for b in self.layout["blocks"].values()
+                  if region_box[0] <= b[0] and b[2] <= region_box[2] and region_box[1] <= b[1] and b[3] <= region_box[3]]
+        if not inside:
+            return h - 0.12
+        return max(0.1, (min(b[1] for b in inside) - region_box[1]) * self.u - 0.10)
 
     # ------------------------------------------------------------------- build
     def _build(self):
@@ -276,18 +327,27 @@ class Diagram(VGroup):
             fill, stroke, sw = region_style[min(d, 2)]
             dg = DomainGroup(r["label"], cx, cy, w, h, fill, stroke=stroke)
             scale, label = 0.5 if d == 0 else 11 / 24, r["label"]
-            if d > 0 and dg.txt.width * scale > w - 0.24:
-                # a nested title wider than its own box (Peppermint's AON domain): break it over lines, as the
-                # reference does, instead of shrinking it until it cannot be read. The outermost title spans the
-                # whole drawing, so it is only shrunk (below), which keeps it on one line as the reference has it.
-                per = dg.txt.width * scale / max(len(label), 1)
-                label = "\n".join(textwrap.wrap(label, max(8, int((w - 0.24) / per))))
-                dg = DomainGroup(label, cx, cy, w, h, fill, stroke=stroke)
+            room_w = w - 0.16
+            room_h = self._header_height(box, h)
+            if d > 0 and (dg.txt.width * scale > room_w or dg.txt.height * scale > room_h):
+                # A nested title that does not fit the strip above the region's own blocks (Peppermint's AON
+                # domain). Break it over lines, as the reference does, rather than shrink it until it cannot be
+                # read: try one, two and three lines and keep whichever ends up biggest. The outermost title
+                # spans the whole drawing, so it is only shrunk, which keeps it on one line as the reference has.
+                best = None
+                for n in (1, 2, 3):
+                    cand = _wrap_to_lines(label, n)
+                    probe = DomainGroup(cand, cx, cy, w, h, fill, stroke=stroke)
+                    got = scale * min(room_w / max(probe.txt.width, 1e-9), room_h / max(probe.txt.height, 1e-9), 1.0)
+                    if best is None or got > best[0] + 1e-6:
+                        best = (got, cand, probe)
+                _got, label, dg = best
             dg.bg.set_stroke(stroke, sw)
             # smaller title, kept inside the top-left corner
             dg.txt.scale(scale)
-            if dg.txt.width > w - 0.24:                 # still too wide (one very long word): shrink to fit
-                dg.txt.scale((w - 0.24) / dg.txt.width)
+            fits = min(room_w / max(dg.txt.width, 1e-9), room_h / max(dg.txt.height, 1e-9), 1.0)
+            if fits < 1.0:                              # still too big: shrink it the rest of the way
+                dg.txt.scale(fits)
             n_lines = label.count("\n") + 1
             dg.txt.move_to(dg.bg.get_corner(UP + LEFT) + RIGHT * 0.12 + DOWN * (0.13 if n_lines == 1 else 0.06),
                            aligned_edge=LEFT if n_lines == 1 else UP + LEFT)
@@ -349,8 +409,11 @@ class Diagram(VGroup):
             blk.add(outline)
         if "blue_outline" in attrs:
             blk.bg.box.set_stroke(BLUE_OUTLINE, 3)
-        if wrapped.strip():          # an unlabeled box has no text to size (and empty Text has no font_size)
+        if wrapped.strip():
             self._pending_fit.append((blk, tw, thh, text_dx))
+        else:
+            blk.remove(blk.txt)      # a box the reference draws with no text: drop the empty Text entirely,
+                                     # so it is neither drawn nor measured (an empty Text has no font size)
         blk.has_markers = bool(marks)
         for i, m in enumerate(marks):
             corner, inx, iny = corners[i % 4]
@@ -438,10 +501,10 @@ class Diagram(VGroup):
             t.move_to([cx, cy, 0])
             # sit against the edge of the box that faces the drawing, so the label meets its own arrow instead
             # of floating in the middle of the room reserved for it
-            left_px, right_px = self._label_boxes0[e["id"]][0], self._label_boxes0[e["id"]][2]
-            if right_px <= self._drawing_left():
+            side = self._label_side(self._label_boxes0[e["id"]])
+            if side == "left":
                 t.align_to([cx + w / 2, cy, 0], RIGHT)
-            elif left_px >= self._drawing_right():
+            elif side == "right":
                 t.align_to([cx - w / 2, cy, 0], LEFT)
             right_edge = min(half_w - FRAME_MARGIN, self._panel_x0 - 0.1)      # never under the step panel
             dx = max(0.0, (-half_w + FRAME_MARGIN) - t.get_left()[0])

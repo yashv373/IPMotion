@@ -222,6 +222,20 @@ def locate_blocks(snaps: list, spec: dict, layout: dict | None = None):
         drawn = sorted(found, key=lambda bb: (bb[0], -bb[3]))      # scene y grows upwards, image y downwards
         for b, bb in zip(order, drawn):
             block_box[b["id"]] = bb
+
+    # Boxes the reference draws with no text at all (Peppermint's unexplained symbol). There is nothing to look
+    # for, so they are paired with the drawn boxes that own no text, in reference order -- the same way blocks
+    # that share a printed name are told apart. Without a position they would read as "end block not drawn".
+    blanks = [b for b in spec.get("blocks") or [] if not b.get("label")]
+    if blanks:
+        rich = snaps[_richest(snaps)]
+        owned = {t.get("owner") for t in rich["units"] if t["kind"] == "text"}
+        free = [u["bbox"] for u in rich["units"]
+                if u["kind"] == "block" and not u.get("transient") and u["id"] not in owned]
+        ref = (layout or {}).get("blocks", {})
+        order = sorted(blanks, key=lambda b: (ref.get(b["id"], [0, 0])[0], ref.get(b["id"], [0, 0])[1]))
+        for b, bb in zip(order, sorted(free, key=lambda bb: (bb[0], -bb[3]))):
+            block_box[b["id"]] = bb
     return block_box, issues, seen
 
 
@@ -235,12 +249,13 @@ def check_dynamic(result: dict, spec: dict, layout: dict | None = None) -> list[
 
     # blocks drawn that the spec does not have
     want = {_norm(v) for v in labels.values()} | {_norm(b) for b in banners}
-    blank = sum(1 for b in spec.get("blocks") or [] if not b.get("label"))   # boxes the reference draws with no text
+    # the boxes locate_blocks paired with a spec block that has no printed label are accounted for, not extra
+    blank = {tuple(block_box[b["id"]]) for b in spec.get("blocks") or []
+             if not b.get("label") and b["id"] in block_box}
     for u in rich["units"]:
         if u["kind"] == "block" and not u.get("transient"):
             own = [t for t in rich["units"] if t["kind"] == "text" and t.get("owner") == u["id"]]
-            if not own and blank:
-                blank -= 1
+            if not own and tuple(u["bbox"]) in blank:
                 continue
             if not any(_norm(t.get("text", "")) in want for t in own):
                 issues.append(_issue("conformance_extra", f"block {u['name']!r} at {u['bbox']} is not in the spec"
