@@ -29,7 +29,10 @@ RULES (follow exactly):
    A diagram that has domains and no DomainGroup is wrong.
 9. Wires: use Connection(src_port, dst_port) with IPBlock(ports=[...]) ports, or Arrow on get_right()/get_left()/get_top()/get_bottom() anchors.
 10. Colors: BLUE data, GREEN control/valid, RED error, YELLOW active, GRAY inactive.
-11. One banner step per phase: banner.update_text("Step N: ..."), then one state change per play(). wait(0.5) between steps, wait 1-2s at the end.
+11. One banner step per phase: banner.update_text("Step N: ..."), then one state change per play().
+12. PACING. A viewer has to READ each step before it changes. Give every play() run_time=0.8 or more, and
+    self.wait(1.2) after each step so the banner can be read. Hold the final state for 2.5s. Too fast is the
+    most common complaint about these animations; a 6-step story should last about 25 seconds, not 8.
 
 HARD QUALITY RULES (a geometric linter checks these locally):
 - No two blocks may overlap; leave a gap of at least 0.15 units between blocks.

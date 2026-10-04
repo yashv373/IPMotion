@@ -154,7 +154,14 @@ def route_points(p0, side_a, q0, side_b, style="manhattan", stub=0.3, jog=0.8):
     return _dedupe_path([p0, p1, m, q1, q0])
 
 class DomainGroup(VGroup):
-    def __init__(self, title, x, y, w, h, fill, stroke=None, dashed=False):
+    """A labelled region. The title fits itself to the box (`fit=True`, the default): a long domain name is
+    broken over up to three lines and shrunk until it sits inside the header strip, instead of running across
+    the blocks underneath it. Pass fit=False if the caller places and sizes the title itself."""
+
+    TITLE_PAD = 0.2          # air either side of the title
+    TITLE_SHARE = 0.26       # the title never eats more than this share of the region's height
+
+    def __init__(self, title, x, y, w, h, fill, stroke=None, dashed=False, fit=True):
         super().__init__()
         if stroke is None: stroke = fill
         if dashed:
@@ -162,11 +169,34 @@ class DomainGroup(VGroup):
             self.bg = DashedVMobject(rect, num_dashes=80)
         else:
             self.bg = RoundedRectangle(width=w, height=h, corner_radius=0.1, fill_color=fill, fill_opacity=1.0, stroke_width=0)
-        
+
         self.bg.move_to([x, y, 0])
-        self.txt = Text(title, color="#94A3B8", font="Arial", weight=BOLD, font_size=24)
+        kw = dict(color="#94A3B8", font="Arial", weight=BOLD, font_size=24)
+        self.txt = Text(title, **kw)
+        if fit:
+            self.txt = self._fit_title(title, kw, max(w - 2 * self.TITLE_PAD, 0.1), max(h * self.TITLE_SHARE, 0.1))
         self.txt.move_to(self.bg.get_corner(UL) + RIGHT*0.2 + DOWN*0.4, aligned_edge=LEFT)
         self.add(self.bg, self.txt)
+
+    @staticmethod
+    def _fit_title(title, kw, room_w, room_h):
+        """Biggest version of the title that fits room_w x room_h: try one, two and three lines and keep
+        whichever ends up largest. Only ever shrinks -- a title that already fits is left exactly as it was."""
+        words = title.split()
+        best = None
+        for n in (1, 2, 3):
+            if n > len(words):
+                break
+            per = -(-len(words) // n)                      # words per line, ceiling
+            lines = [" ".join(words[i:i + per]) for i in range(0, len(words), per)]
+            cand = Text("\n".join(lines), **kw)
+            scale = min(room_w / max(cand.width, 1e-9), room_h / max(cand.height, 1e-9), 1.0)
+            if best is None or scale > best[0] + 1e-6:
+                best = (scale, cand)
+        scale, cand = best
+        if scale < 1.0:
+            cand.scale(scale)
+        return cand
 
 class GlowBox(VGroup):
     def __init__(self, width, height, color, fill_color, stroke_width=2.0, corner_radius=0.15, dotted=False):

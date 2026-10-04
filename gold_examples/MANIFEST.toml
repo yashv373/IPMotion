@@ -58,3 +58,10 @@ status = "excluded"
 scene = "DarjeelingExact"
 lint_role = "none"
 reason = "Sets config.pixel_width/pixel_height/frame_width and does not use ipmotion_lib."
+
+[files."systolic_array_mac.py"]
+status = "indexable"
+scene = "SystolicArrayMac"
+lint_role = "baseline"
+reason = "Renders with 0 lint errors and 0 warnings. The first gold example that is not a floorplan: it teaches loop-generated repeated blocks, computed grid coordinates, and several blocks animating in one play() call."
+notes = "Structure cited in docs/SOURCES.md (Kung & Leiserson 1978; Jouppi et al. ISCA 2017). Added 2026-10-05."

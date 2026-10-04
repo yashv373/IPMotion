@@ -325,7 +325,7 @@ class Diagram(VGroup):
             cx, cy, w, h = self._box(box)
             d = depth_of(r["id"])
             fill, stroke, sw = region_style[min(d, 2)]
-            dg = DomainGroup(r["label"], cx, cy, w, h, fill, stroke=stroke)
+            dg = DomainGroup(r["label"], cx, cy, w, h, fill, stroke=stroke, fit=False)
             scale, label = 0.5 if d == 0 else 11 / 24, r["label"]
             room_w = w - 0.16
             room_h = self._header_height(box, h)
@@ -337,7 +337,7 @@ class Diagram(VGroup):
                 best = None
                 for n in (1, 2, 3):
                     cand = _wrap_to_lines(label, n)
-                    probe = DomainGroup(cand, cx, cy, w, h, fill, stroke=stroke)
+                    probe = DomainGroup(cand, cx, cy, w, h, fill, stroke=stroke, fit=False)
                     got = scale * min(room_w / max(probe.txt.width, 1e-9), room_h / max(probe.txt.height, 1e-9), 1.0)
                     if best is None or got > best[0] + 1e-6:
                         best = (got, cand, probe)
