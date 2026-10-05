@@ -169,7 +169,10 @@ class DomainGroup(VGroup):
             rect = RoundedRectangle(width=w, height=h, corner_radius=0.1, stroke_color=stroke, stroke_width=2, fill_opacity=0)
             self.bg = DashedVMobject(rect, num_dashes=80)
         else:
-            self.bg = RoundedRectangle(width=w, height=h, corner_radius=0.1, fill_color=fill, fill_opacity=1.0, stroke_width=0)
+            # stroke_width was 0, so the stroke colour was silently ignored and a region had no visible edge at
+            # all -- "the boundaries are not well defined". A region is a boundary; it gets one.
+            self.bg = RoundedRectangle(width=w, height=h, corner_radius=0.1, fill_color=fill, fill_opacity=1.0,
+                                       stroke_color=stroke, stroke_width=2.5)
 
         self.bg.move_to([x, y, 0])
         kw = dict(color="#94A3B8", font="Arial", weight=BOLD, font_size=24)
@@ -1664,3 +1667,100 @@ SHAPE_REGISTRY = {
     # Fallback
     'box': None,
 }
+
+
+# ==========================================
+# SECTION: wire routing
+# ==========================================
+def _box_of(m, pad=0.0):
+    """Axis-aligned box [x0, y0, x1, y1] of a mobject, grown by pad."""
+    return [m.get_left()[0] - pad, m.get_bottom()[1] - pad, m.get_right()[0] + pad, m.get_top()[1] + pad]
+
+
+def _hits(p, q, box):
+    """Does the axis-aligned segment p->q pass through box?"""
+    x0, y0, x1, y1 = box
+    if abs(p[0] - q[0]) < 1e-9:                       # vertical
+        lo, hi = sorted((p[1], q[1]))
+        return x0 < p[0] < x1 and not (hi <= y0 or lo >= y1)
+    lo, hi = sorted((p[0], q[0]))
+    return y0 < p[1] < y1 and not (hi <= x0 or lo >= x1)
+
+
+def _clear_path(pts, boxes):
+    return all(not _hits(pts[i], pts[i + 1], b) for i in range(len(pts) - 1) for b in boxes)
+
+
+def route_points(src, dst, avoid=(), pad=0.10):
+    """Orthogonal points from the edge of src to the edge of dst that go AROUND everything in avoid.
+
+    A straight line between two blocks runs over whatever sits between them, which is the single most common
+    fault in a generated diagram: the wire hides the name of a block it has nothing to do with. This tries the
+    short routes first and falls back to a detour through the nearest free channel.
+    """
+    a, b = _box_of(src), _box_of(dst)
+    obs = [_box_of(m, pad) for m in avoid if m is not src and m is not dst]
+    acx, acy = (a[0] + a[2]) / 2, (a[1] + a[3]) / 2
+    bcx, bcy = (b[0] + b[2]) / 2, (b[1] + b[3]) / 2
+
+    cands = []
+    ox0, ox1 = max(a[0], b[0]), min(a[2], b[2])        # shared x band -> a vertical wire can run in it
+    oy0, oy1 = max(a[1], b[1]), min(a[3], b[3])        # shared y band -> a horizontal wire can run in it
+    if ox1 - ox0 > 0.02:
+        for x in sorted({(ox0 + ox1) / 2, acx, bcx}, key=lambda v: abs(v - (ox0 + ox1) / 2)):
+            x = min(max(x, ox0 + 0.02), ox1 - 0.02)
+            cands.append([[x, a[1]], [x, b[3]]] if acy > bcy else [[x, a[3]], [x, b[1]]])
+    if oy1 - oy0 > 0.02:
+        for y in sorted({(oy0 + oy1) / 2, acy, bcy}, key=lambda v: abs(v - (oy0 + oy1) / 2)):
+            y = min(max(y, oy0 + 0.02), oy1 - 0.02)
+            cands.append([[a[2], y], [b[0], y]] if acx < bcx else [[a[0], y], [b[2], y]])
+    # L routes: out sideways then up/down, or out vertically then across
+    ax, bx = (a[2], b[0]) if acx < bcx else (a[0], b[2])
+    ay, by = (a[3], b[1]) if acy < bcy else (a[1], b[3])
+    cands.append([[ax, acy], [bcx, acy], [bcx, by]])
+    cands.append([[acx, ay], [acx, bcy], [bx, bcy]])
+    # Z routes: leave sideways, cross on a channel between the two, come back in
+    for f in (0.5, 0.3, 0.7):
+        mx = ax + (bx - ax) * f
+        cands.append([[ax, acy], [mx, acy], [mx, bcy], [bx, bcy]])
+        my = ay + (by - ay) * f
+        cands.append([[acx, ay], [acx, my], [bcx, my], [bcx, by]])
+    # Detours: leave by the top (or bottom, left, right) and cross on a channel that clears every obstacle.
+    # Without these, two blocks on the same row have no route that is not straight through whatever is between
+    # them -- which is exactly the fault this function exists to remove.
+    gap = pad + 0.22
+    for o in obs:
+        for y in (o[3] + gap, o[1] - gap):
+            cands.append([[acx, a[3]], [acx, y], [bcx, y], [bcx, b[3]]])
+            cands.append([[acx, a[1]], [acx, y], [bcx, y], [bcx, b[1]]])
+        for x in (o[2] + gap, o[0] - gap):
+            cands.append([[a[2], acy], [x, acy], [x, bcy], [b[2], bcy]])
+            cands.append([[a[0], acy], [x, acy], [x, bcy], [b[0], bcy]])
+
+    for pts in cands:
+        if _clear_path(pts, obs):
+            return [[float(x), float(y)] for x, y in pts]
+    return [[float(x), float(y)] for x, y in cands[0]]      # nothing is clear: the shortest one, still honest
+
+
+def wire(src, dst, avoid=(), color="#9CA3AF", stroke_width=4, heads="to", pad=0.10, z_index=-1):
+    """A routed wire between two blocks, as a VGroup of segments.
+
+        self.add(wire(ibex, crossbar, avoid=blocks))
+
+    heads: "to" (arrow at dst), "both", or "none". z_index defaults to -1 so a wire sits BEHIND the blocks and
+    can never hide a block's name.
+    """
+    pts = route_points(src, dst, avoid=avoid, pad=pad)
+    segs = VGroup()
+    for i in range(len(pts) - 1):
+        p, q = [pts[i][0], pts[i][1], 0.0], [pts[i + 1][0], pts[i + 1][1], 0.0]
+        seg = Line(p, q, color=color, stroke_width=stroke_width)
+        tl = min(0.18, float(np.linalg.norm(np.array(q) - np.array(p))) * 0.8)
+        if i == len(pts) - 2 and heads in ("to", "both") and tl > 0.02:
+            seg.add_tip(tip_length=tl, tip_width=tl * 0.85)
+        if i == 0 and heads == "both" and tl > 0.02:
+            seg.add_tip(tip_length=tl, tip_width=tl * 0.85, at_start=True)
+        segs.add(seg)
+    segs.set_z_index(z_index)
+    return segs

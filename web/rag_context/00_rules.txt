@@ -27,6 +27,24 @@ arrow was drawn across them. If you must add a wire later, give it arrow.set_z_i
 Prefer short wires between neighbours. A long straight wire between two distant blocks will cross everything in
 between, and the reader cannot tell which blocks it actually joins.
 
+RULE 3 -- USE wire() FOR EVERY CONNECTION. DO NOT DRAW ARROWS YOURSELF.
+The library routes wires around blocks for you. You cannot do this by hand: an Arrow between two blocks is a
+straight line that runs over everything in between and hides those blocks' names.
+
+    blocks = [ibex, crossbar, sram, uart]          # every block in the drawing
+    self.add(wire(ibex, crossbar, avoid=blocks))   # routed around anything in the way, drawn behind the blocks
+
+  - Pass avoid=<the list of every block you created>. The wire's own two ends are ignored automatically.
+  - heads="to" puts an arrowhead at the target (default), "both" for bidirectional, "none" for a plain link.
+  - wire() already sets z_index so the wire sits behind the blocks. Do not re-add it on top.
+  - Only fall back to Arrow() when you genuinely want a free-standing arrow with no block at one end, such as an
+    edge label pointing in from outside the diagram.
+
+RULE 4 -- EVERY LABEL MUST BE READABLE AT A GLANCE.
+Edge labels ("Memory bus egress for Ibex and DMA", "Noise source bits") are the first thing a reader looks for
+and the first thing that ends up unreadable. Use font_size 16 or more for any free-standing label outside a
+block, and never below 14 anywhere. If a label does not fit, break it over two lines rather than shrinking it.
+
 RULES (follow exactly):
 1. Start with `from manim import *` then `from ipmotion_lib import *`.
 2. NEVER set config.pixel_width, config.pixel_height or config.frame_width.

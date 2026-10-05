@@ -567,3 +567,40 @@ citation underneath points at the real ones.
 
 **Next:** wiring accuracy, not completeness. 3 reps when the quota resets, to see whether RULE 2 recovers the
 hit rate that RULE 1 traded away.
+
+## Answering "how do we make it do good wiring?" (2026-10-05)
+
+User's read of the current demo: layout improved and text sits correctly inside blocks, but wiring is extremely
+bad, domain boundaries are not well defined, and some edge labels are too small to read.
+
+All three were library omissions, not prompt problems, and the same shape as the title bug:
+
+**1. Wiring.** Every generated wire is a straight line between two blocks that ignores everything between them,
+which is why it runs across OTBN, KMAC, HMAC and hides their names. The engine has solved this for a year inside
+`diagram.py._avoid`, where a generated script cannot reach it. So the library now has its own router:
+
+    route_points(src, dst, avoid=[...])   -> orthogonal points that go around the obstacles
+    wire(src, dst, avoid=blocks)          -> a VGroup of segments, z_index -1 so it sits BEHIND the blocks
+
+It tries the short routes first (shared x or y band, then L, then Z) and falls back to a detour through a
+channel just outside an obstacle. **The first version failed its own test**: with two blocks on the same row
+every candidate it generated still ran straight through the block between them, because none of them left by
+the top or bottom. Detour channels derived from each obstacle's own edges fixed it. `tests/test_wire_routing.py`
+(9 tests) pins it: a clear run stays a straight line, a blocked run goes around, three obstacles in a row are
+all avoided, the ends stay on their blocks, and the wire is behind them.
+
+**2. Domain boundaries.** `DomainGroup` built its rectangle with `stroke_width=0`, so the stroke colour the
+caller passed was silently ignored and a region had no visible edge at all. It now draws a 2.5-wide border in
+the colour given. `diagram.py` sets its own stroke afterwards, so the chip renders are unchanged.
+
+**3. Edge labels.** RULE 4 asks for font_size 16 or more outside a block, never below 14, and a line break
+rather than shrinking.
+
+**RULE 3** points the model at `wire()` and tells it not to draw connection arrows by hand, with the one
+exception that still needs `Arrow`: a free-standing label pointing in from outside the diagram.
+`web/make_context.py` regenerates the API file, so `wire` and `route_points` now appear in the signatures the
+model is given.
+
+**Not yet measured** -- the quota is spent. The next 3-rep run is the first that can show whether the model
+actually calls `wire()`. If it does, the wire-over-block fault disappears structurally rather than by
+persuasion; if it does not, the rule needs to be louder, not the router better.
