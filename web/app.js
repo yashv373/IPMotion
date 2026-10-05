@@ -1,7 +1,7 @@
 // IPMotion generator: runs entirely in the browser. No backend.
 const $ = (id) => document.getElementById(id);
 const CTX = ["00_rules", "10_library_api", "20_example_axi", "25_example_earlgrey", "27_example_wired", "30_user_input_notes"].map((n) => `rag_context/${n}.txt`);
-const DEFAULT_MODEL = { gemini: "gemini-3.5-flash", anthropic: "claude-opus-5-5" };
+const DEFAULT_MODEL = { gemini: "gemini-3.5-flash", anthropic: "claude-opus-5-5", openrouter: "deepseek/deepseek-chat-v3.1" };
 const store = {
   get: (k) => { try { return localStorage.getItem(k) || ""; } catch { return ""; } },
   set: (k, v) => { try { v ? localStorage.setItem(k, v) : localStorage.removeItem(k); } catch {} },
@@ -37,6 +37,13 @@ async function callLLM(provider, model, key, prompt) {
       },
       body: JSON.stringify({ model, max_tokens: 16000, messages: [{ role: "user", content: prompt }] }),
     });
+  } else if (provider === "openrouter") {
+    // OpenAI-compatible. Any slug from openrouter.ai/models works, including the free open-weight ones.
+    res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+      method: "POST",
+      headers: { "content-type": "application/json", authorization: `Bearer ${key}` },
+      body: JSON.stringify({ model, messages: [{ role: "user", content: prompt }], temperature: 0.2 }),
+    });
   } else {
     res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`, {
       method: "POST",
@@ -52,6 +59,8 @@ async function callLLM(provider, model, key, prompt) {
   }
   const text = provider === "anthropic"
     ? (data.content || []).map((b) => b.text || "").join("")
+    : provider === "openrouter"
+    ? ((data.choices || [])[0]?.message?.content || "")
     : ((data.candidates || [])[0]?.content?.parts || []).map((p) => p.text || "").join("");
   if (!text) throw new Error("The model returned no text.\n" + JSON.stringify(data).slice(0, 400));
   return cleanResponse(text);

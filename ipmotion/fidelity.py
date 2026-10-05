@@ -67,5 +67,5 @@ def score(result: dict, spec: dict, layout: dict) -> dict:
         "layout_pairs": total, "layout_agree": agree,
         "layout_percent": round(100.0 * agree / total, 1) if total else None,
         "unconfirmed": unconf,
-        "issues_by_check": dict(by), "issue_details": [i["detail"] for i in issues][:20],
+        "issues_by_check": dict(by), "issue_details": [i["detail"] for i in issues][:200],  # 20 hid the tail of the wiring issues
     }

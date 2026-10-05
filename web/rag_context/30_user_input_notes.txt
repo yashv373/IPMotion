@@ -1,1 +1,8 @@
 The user's STORY says what should happen, step by step. The user's BLOCK DIAGRAM (optional) lists blocks, domains and connections as text (any format, often YAML). Treat the diagram text as the single source of truth for names and connections. Never use outside knowledge of a chip's architecture to add or rename blocks.
+
+CONNECTION NOTATION. The diagram text marks each link with one of three symbols. Match the arrowheads exactly:
+  A -> B    one arrowhead, at B          ->  wire(a, b)
+  A <-> B   an arrowhead at BOTH ends    ->  wire(a, b, heads="both")
+  A -- B    a plain link, NO arrowhead   ->  wire(a, b, heads="none")
+A line like "X -- P, Q, R" is three separate links: X--P, X--Q, X--R. If the user marks a link with none of these
+symbols, draw it as "->".

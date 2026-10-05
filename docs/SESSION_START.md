@@ -47,7 +47,7 @@ browser prompt against a held-out Peppermint exam, scored with the existing lint
 wants are not in the input verbatim. Blocks and regions are therefore AT their ceiling. **Wiring, 19/32, is the
 open quality problem.**
 
-**Live prompt contains:** rules, library API, the AXI example, the Earlgrey example, input notes. Darjeeling was
+**Live prompt contains:** rules, library API, AXI, Earlgrey, the wired SoC fabric example, input notes. Darjeeling was
 removed (it cost prompt size without earning it). **Peppermint is held out and must never enter a prompt** — it
 is the exam. A test enforces this.
 
@@ -55,42 +55,43 @@ is the exam. A test enforces this.
 `axi_read_handshake`, `systolic_array_mac`, `mesi_cache_fsm`, `lockstep_safety_island`, `cim_crossbar_array`.
 The last four are **deliberately not in the live prompt yet** — they are unmeasured.
 
-## 4b. The one open question (2026-10-05)
-Everything since the strict-name rule is UNMEASURED, because the Gemini free tier is 20 requests a day and it is
-spent. There is no `.env`; that key is the only provider configured.
+## 4b. The one open question, ANSWERED (2026-10-05, evening)
+**Does the model call `wire()`? Yes.** 23 `wire(` calls per script, 8 `Arrow(` left (the edge labels RULE 3
+allows). Lint errors halved, 22 -> 10.5. See the last section of `docs/PROGRESS.md` for the numbers.
 
-Since the last measurement the library gained real capability and the prompt gained three rules:
-- `wire(src, dst, avoid=blocks)` routes a wire around blocks and draws it behind them. Proven on the generator's
-  own layout -- see `docs/wiring_after.png`, which is the model's blocks with the library's wires.
-- `DomainGroup` draws its border (it was built with `stroke_width=0`, so regions had no visible edge) and puts
-  its title ABOVE the box, where blocks cannot collide with it.
-- Layering is explicit: region -2, wires -1, blocks 0.
-- RULE 1 (draw every connection), RULE 2 (wires behind blocks), RULE 3 (use wire(), do not hand-draw arrows),
-  RULE 4 (labels 16pt or more outside a block).
-- `gold_examples/wired_soc_fabric.py` is in the live prompt as `27_example_wired.txt`, because the other two
-  examples used `Arrow` and explicit `Line` points and therefore contradicted RULE 3.
+**The new finding: "wires 17.5/32" was mostly the exam, not the generator.** `bench/wire_buckets.py` splits the
+rejected connections: 7 unscorable (an end-block label was not in the input verbatim), 8-9 arrowhead-only (the
+right pair IS joined, only the heads differ), and 0 and 2 genuinely wrong. The exam input has been re-baselined and the `-> / <-> / --`
+notation is now taught to every user. **That re-baseline is unmeasured**: the Gemini free tier (20/day) ran out.
 
-**THE FIRST COMMAND NEXT SESSION:**
+**THE FIRST COMMAND NEXT SESSION** (quota resets ~05:00 local):
 
     python bench/run_web.py bench/web_inputs/peppermint.txt bench/web_inputs/peppermint.story.txt --reps 3
+    python bench/wire_buckets.py
 
-**Then grep the generated script for `wire(`.** If it is there, the wire-over-block fault is gone structurally
-and the numbers should show it. If it is not, the rule needs to be louder or the example more prominent -- the
-router itself is already proven, so do not touch it.
+**Predicted**: unscorable 7 -> ~2, arrowhead-only -> ~0, wires 17.5 -> 26-29 of 32. Numbers below that mean the
+remaining gap is real. Numbers at it mean wiring is done, and the next bug is the one named below.
+
+**The next quality bugs, seen in both last frames, not started.** Three, all library guarantees:
+1. the AON TL-UL Crossbar label is drawn at ~6pt and unreadable in both reps (`min_text_size`). A label must
+   never shrink below readable -- rotate it in a narrow tall box, or widen the box;
+2. one block escapes its region per rep, a different one each time (AON crossbar, then `ibex_core`);
+3. the outer region was never drawn, because the exam input never named it. Fixed at the input this session.
+Faults 2 and 3 are the regions drop, 2/3 -> 1/3. Fault 1 is separate; fixing text size will not move regions.
 
 ## 5. What to do next, in order
-1. **Re-run the 3-rep measurement** — the library-fit result is n=1 because the daily Gemini free quota (20
-   requests) ran out. `python bench/run_web.py bench/web_inputs/peppermint.txt bench/web_inputs/peppermint.story.txt --reps 3`
-2. **Attack wiring completeness.** It is the one number still far from its ceiling. Do it the way names were
-   attacked: one blunt rule high in the prompt, measured in isolation. Not more examples.
+1. **Measure the re-baselined exam** (3 reps, 3 of the day's 20 calls) and run `bench/wire_buckets.py`. This is
+   the number that says whether wiring is finished. Prediction is written in 4b; compare against it honestly.
+2. **The unreadable AON crossbar label** (4b). A library guarantee: a label never shrinks below readable. Expect
+   it to move regions 1/3 -> 2/3 and remove the `min_text_size` lint error.
 3. **Measure a new shape going in.** Held-out exams are ready: `bench/web_inputs/systolic.*` and
    `bench/web_inputs/arbiter_fsm.*`. Score them with `--no-spec` (geometry only; there is no reference answer
    for a shape we invented the exam for).
 4. **Retrieval.** With five gold examples, sending all of them is not viable — the prompt was already 85k
    characters with two. Pick the 1-2 that match the user's input. This is the user's own idea and it stops being
    optional at example three.
-5. **Re-baseline** after fixing the three unmatched labels in `bench/web_inputs/peppermint.txt`, as a deliberate
-   step, since it breaks comparability with every row above.
+5. **Done this session:** the re-baseline of `bench/web_inputs/peppermint.txt`. It breaks comparability with
+   every row above, so the next measurement starts a new baseline block in the table.
 
 ## 6. How to work
 - **Measure before you build.** State the number you expect to move before starting.

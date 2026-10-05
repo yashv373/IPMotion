@@ -633,3 +633,121 @@ now in the live prompt as `27_example_wired.txt`.
 proven; the example now demonstrates it; the rule demands it. The Gemini free tier (20/day) is spent, and there
 is no `.env`, so that key is the only provider configured. **The first command next session answers it**, and
 the single thing to grep for in the generated script is `wire(`.
+
+## Future work, recorded not started (2026-10-05)
+
+Three directions came from outside the repo this session. **None of them is built, and none should be started
+before wiring accuracy is fixed** -- that is the one number still far from its ceiling, and it is what every
+outside tester sees first.
+
+**1. RTL in, datapath out, animation after (a manager's suggestion).** Read Verilog/VHDL, work out the data
+path, animate it. This removes the hand-written block diagram from the input, which is the single biggest
+chore for a new user. Two things to settle before any code:
+- It makes RTL a *second* source of architecture facts, which conflicts with the rule in CLAUDE.md that facts
+  come only from `bench/truth/*.yaml`. Either the extracted netlist becomes a generated truth file (preferred:
+  the lint and fidelity scorers then work unchanged), or the rule gets an exception.
+- Measure the cheap version first. A Yosys/`pyverilog` hierarchy dump rendered straight into the existing
+  block-diagram text format would show, in one afternoon, whether the output is worth animating -- before
+  anyone builds datapath inference. (No unmeasured pivots.)
+
+**2. Sequential improvement / self-refinement.** Already on the roadmap as M4 (ordered repair loop) and named on
+the site under "Not happy with the first result?". The website hands over a one-shot script today; the repair
+loop exists locally. Bringing generate -> lint -> repair into the browser is the same work, not new work.
+
+**3. An ST-internal version.** Shown to the user's STMicroelectronics manager, who wants an internal build
+later. Porting is a corpus swap, not an architecture change: `web/rag_context/`, `gold_examples/` and
+`gold_examples/MANIFEST.toml` are the three things that would carry internal examples alongside the open-source
+ones. **Build no abstraction for this now** -- the thing that makes the port easy is that the open-source
+version stays good and the corpus stays data.
+
+## Feedback from an outside tester (Saankhya Labs, 2026-10-05)
+
+First user outside the project. What they said, and what was done with it:
+
+| What they said | Status |
+|---|---|
+| "the generated script needed soo much more optimisation" | **The open problem.** This is wiring accuracy; see the section above. |
+| "i don't have anthropic keys ... if you could put an open router / open source key vendors that would be great" | **Added, not yet run end-to-end** (nobody here has an OpenRouter key). `web/app.js` has an OpenRouter provider: OpenAI-compatible endpoint, `Bearer` key, `choices[0].message.content`. Verified by hand: the CORS preflight from the Pages origin returns `Access-Control-Allow-Origin: *`, and both default slugs exist in `/api/v1/models` (`deepseek/deepseek-chat-v3.1`, 163k context; `qwen/qwen3-coder`, 262k). **The first visitor with a key is the real test.** |
+| "Manim didn't support my older python 3 version ... it needs the newer 3.11x" | **Done, and they were right.** `manim==0.21.0` declares `requires_python >=3.11` on PyPI; the page said 3.10 to 3.12. It now says 3.11 or 3.12, says plainly that an older Python 3 will not work, and gives the `py -3.11 -m pip install` line for Windows. |
+| "You're not storing the prompts kya? ... so company can use this without worrying about ip stealing" | Already true and already on the page (static site, no backend). Worth saying it in the words a company cares about: **your diagram never leaves your browser except to the provider you chose.** |
+| "i feel the context window was small" | **Measured, and the old claim was wrong.** The live prompt is **52,938 characters, about 13k tokens** (the 90k figure dates from when Darjeeling was still in it). The page now states that and asks for a 32k context or more. What the tester actually meant is not known -- do not guess. |
+| "this is basically a deterministic video generation compiler being driven by ai, not ai video generation" | Their words, and a better one-line description of the product than anything currently on the site. Candidate for the hero text. |
+
+## The wiring question, answered: the model does call wire(), and "wires 19/32" was mostly a scoring artefact (2026-10-05)
+
+**The open question from last session was: will the model actually call `wire()`?** It does. Both scored reps
+contain **23 `wire(` calls** and only 8 remaining `Arrow(` (the edge labels, which RULE 3 explicitly allows).
+The router, the rule and the wired example together did the job.
+
+**n=2, not 3.** The daily Gemini free quota (20 requests) ran out during rep 3. That is the whole budget for
+2026-10-05; it resets in about 9 hours.
+
+| context | lint | blocks | wires | regions | extras |
+|---|---|---|---|---|---|
+| + strict names (n=2) | 19.0 | 31.0/33 | 10.0/32 | 2.0/3 | 9.5 |
+| + library fit & pacing (n=1) | 22.0 | 31.0/33 | 19.0/32 | 2.0/3 | 6.0 |
+| **+ wire() router, RULES 1-4, wired example (n=2)** | **10.5** | 31.0/33 | 17.5/32 | **1.0/3** | 7.5 |
+
+**Lint errors halved against the n=1 row, 22 -> 10.5.** That is what a
+viewer actually sees: the last frame of rep 1 has orthogonal wires, nothing crossing a block name, and both
+domain titles sitting above their borders. Looked at by eye, not inferred from the score.
+
+**Wires did not move, and `bench/wire_buckets.py` says why.** It splits the connections the scorer rejected into
+the three buckets that need three different fixes:
+
+|  rep | wires_ok | unscorable | arrowhead-only | genuinely wrong or missing |
+|---|---|---|---|---|
+| 1 | 19/32 | 7 | 8 | **0** |
+| 2 | 16/32 | 7 | 9 | **2** |
+
+(`fidelity` was truncating `issue_details` to 20 entries, which hid the tail and made the first version of this
+table a floor. The cap is now 200, and both scripts were **re-scored from disk at no cost in quota** -- the
+numbers above are the complete ones.)
+
+So of the 15 and 18 connections scored wrong, **all but 0 and 2 are not wiring mistakes**:
+- **7 unscorable.** They end at `Entropy Source, CSRNG, EDN` or `Life Cycle Function Control`, two labels the
+  exam input did not contain verbatim, so the end block can never match and the wire is marked wrong twice over.
+- **8-9 arrowhead-only.** The right pair of blocks IS joined; only the heads differ. The truth file records the
+  crossbar links as `heads: none` (plain bars in the real picture), the input wrote them as `<->`, and the model
+  reasonably drew arrowheads.
+- **0 in rep 1 and 2 in rep 2 genuinely wrong or missing.**
+
+**The conclusion, and it reverses what this file said twelve hours ago:** wiring is not "far from its ceiling".
+Against a fair input it is close to it. The number was being held down by the exam, not by the generator. The
+sentence "wiring accuracy, not completeness" in the earlier section was wrong.
+
+**The re-baseline (done, unmeasured).** `bench/web_inputs/peppermint.txt` has been corrected, deliberately, which
+breaks comparability with every row above:
+- `Entropy Source, CSRNG, EDN` is written with its commas, on its own line, flagged as one block;
+- `Life Cycle Function Control` is added to the edge labels (it was missing entirely);
+- the DUAL LOCKSTEP tag is described as a tag on the Ibex box, not a block, because the model kept drawing it as
+  an extra block;
+- the undirected links are written `--` instead of `<->`.
+
+And the notation is now **defined for every user**, not just for the exam, in `30_user_input_notes.txt` and on
+the site next to the diagram box: `->` one head at the target, `<->` a head at each end, `--` a plain link with
+no head. This is a notation fix, not an exam fix: a visitor who types `<->` gets two heads, which is what they
+mean by it.
+
+**Expected next run** (state it before measuring, per the rule): unscorable 7 -> ~2 (`unlabeled_symbol` can never
+match, so c25/c26 stay unscorable), arrowhead-only 8-9 -> ~0, and **wires 17.5 -> 26-29 of 32**. If it lands
+there, wiring is done and the next quality problem is the one the frame shows, below. If it does not, the
+remaining gap is real and is worth a rule.
+
+**What the frames show, looked at by eye, and the next real bugs.** Both last frames were opened. Three faults,
+all library guarantees rather than prompt problems, and all of them the same shape as the DomainGroup title fix:
+
+1. **A label shrunk below readable.** The AON TL-UL Crossbar is a tall thin bar and its label is drawn at roughly
+   6pt, unreadable, in **both** reps -- this is the `min_text_size` error in both. The model makes the box narrow
+   because the input asks for "a tall bar", then shrinks the text until it fits. A label should never be allowed
+   below readable: rotate it in a narrow tall box, or widen the box.
+2. **A block escapes its region**, once per rep and a different block each time: `aon` does not contain the AON
+   crossbar in rep 1, `main` does not contain `ibex_core` in rep 2. One shared bug, not two.
+3. **The outer region is never drawn.** `domain 'outer'` fails in both reps -- the exam input did not name it at
+   all until this session's re-baseline. That is one of the three region points, now fixed at the input.
+
+So the regions drop (2/3 -> 1/3) is faults 2 and 3, and the unreadable crossbar label is fault 1. They are
+separate: fixing the text size alone will not move regions.
+
+**Quota note for whoever runs this next:** the free tier is 20 requests a day for `gemini-3.5-flash`, and a 3-rep
+run costs 3. Spend them on the re-baseline first.
