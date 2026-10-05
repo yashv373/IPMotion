@@ -785,3 +785,22 @@ goes below the floor, a tall bar rotates, a short title in a tall bar is untouch
 **Unmeasured, deliberately.** RULE 5 and `domain_around` change the prompt, so the next run measures the
 re-baselined input AND these two rules together. Attribution will be muddy; the alternative was to leave a known
 fix out overnight. Expect regions 1/3 -> 2-3/3 and the `min_text_size` error gone.
+
+## Measuring without the Gemini free tier (2026-10-05, late)
+
+The daily 20-request Gemini quota is the hard limit on how often anything here can be measured: one 3-rep run
+spends three of them, and it ran out twice today. `rag_pipeline.call_llm` now takes an **OpenRouter** branch,
+first in line when `OPENROUTER_API_KEY` is set, and `bench/common.MODEL` reads `IPMOTION_MODEL`:
+
+    IPMOTION_MODEL="deepseek/deepseek-chat-v3.1" OPENROUTER_API_KEY=sk-or-... \
+      python bench/run_web.py bench/web_inputs/peppermint.txt bench/web_inputs/peppermint.story.txt --reps 3
+
+It is the same endpoint `web/app.js` calls, so a bench run through it measures what an OpenRouter visitor
+actually gets, and it is the end-to-end test the new provider has not had. **Never mix providers inside one
+comparison table** -- a row is one model.
+
+**New SoCs are blocked on a source, not on code.** `bench/web_inputs/` holds two held-out exams that are not
+chips (`systolic`, `arbiter_fsm`), and the only unused image in the repo, `openPulp_arch/pulp_story.png`, is a
+platform taxonomy chart rather than an SoC floorplan -- a useful "new shape" exam, not a new SoC. Per
+`docs/SOURCES.md` we do not invent hardware, so a fourth chip needs a published block diagram added to the repo
+with its citation, and its truth file transcribed from that picture and approved. Waiting on the user to pick.

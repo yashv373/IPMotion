@@ -16,7 +16,9 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, ROOT)
 CLEAN_INDEX = os.path.join(ROOT, ".chroma_db_clean")
 os.environ["IPMOTION_CHROMA_DIR"] = CLEAN_INDEX          # BOTH pipelines use the clean manifest-only index
-MODEL = "gemini-3.5-flash"                               # ONE model for every run in the comparison
+MODEL = os.environ.get("IPMOTION_MODEL", "gemini-3.5-flash")   # ONE model for every run in a comparison.
+# Set IPMOTION_MODEL to an OpenRouter slug (it has a "/") and OPENROUTER_API_KEY to measure that provider
+# instead -- the same endpoint the website calls. Never mix providers inside one comparison table.
 MAX_ATTEMPTS = 8
 
 import rag_pipeline  # noqa: E402  (reads IPMOTION_CHROMA_DIR at import)

@@ -92,9 +92,29 @@ def build_prompt(user_request, context):
 def call_llm(prompt, api_key=None, model="gemini-3.5-flash"):
     """
     Call an LLM to generate the Manim script.
-    Supports: Google Gemini (default), OpenAI, or local Ollama.
+    Supports: OpenRouter, Google Gemini (default), OpenAI, or local Ollama.
     """
-    # Try Google Gemini first
+    # OpenRouter first when its key is set, because setting it is a deliberate choice. Same endpoint the website
+    # uses, so a bench run with it measures exactly what an OpenRouter visitor gets -- and the Gemini free tier
+    # is 20 requests a day, which a 3-rep run eats in one go.
+    or_key = os.environ.get("OPENROUTER_API_KEY")
+    if or_key:
+        import requests
+        slug = model if "/" in model else os.environ.get("OPENROUTER_MODEL", "deepseek/deepseek-chat-v3.1")
+        r = requests.post("https://openrouter.ai/api/v1/chat/completions",
+                          headers={"Authorization": f"Bearer {or_key}", "Content-Type": "application/json"},
+                          json={"model": slug, "messages": [{"role": "user", "content": prompt}],
+                                "temperature": 0.2},
+                          timeout=600)
+        if r.status_code != 200:
+            raise RuntimeError(f"OpenRouter API failed: {r.status_code} {r.text[:300]}")
+        body = r.json()
+        text = (body.get("choices") or [{}])[0].get("message", {}).get("content") or ""
+        if not text:
+            raise RuntimeError(f"OpenRouter returned no text: {str(body)[:300]}")
+        return _clean_response(text)
+
+    # Try Google Gemini next
     api_key = api_key or os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY")
 
     if api_key:
