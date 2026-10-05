@@ -55,6 +55,29 @@ is the exam. A test enforces this.
 `axi_read_handshake`, `systolic_array_mac`, `mesi_cache_fsm`, `lockstep_safety_island`, `cim_crossbar_array`.
 The last four are **deliberately not in the live prompt yet** — they are unmeasured.
 
+## 4b. The one open question (2026-10-05)
+Everything since the strict-name rule is UNMEASURED, because the Gemini free tier is 20 requests a day and it is
+spent. There is no `.env`; that key is the only provider configured.
+
+Since the last measurement the library gained real capability and the prompt gained three rules:
+- `wire(src, dst, avoid=blocks)` routes a wire around blocks and draws it behind them. Proven on the generator's
+  own layout -- see `docs/wiring_after.png`, which is the model's blocks with the library's wires.
+- `DomainGroup` draws its border (it was built with `stroke_width=0`, so regions had no visible edge) and puts
+  its title ABOVE the box, where blocks cannot collide with it.
+- Layering is explicit: region -2, wires -1, blocks 0.
+- RULE 1 (draw every connection), RULE 2 (wires behind blocks), RULE 3 (use wire(), do not hand-draw arrows),
+  RULE 4 (labels 16pt or more outside a block).
+- `gold_examples/wired_soc_fabric.py` is in the live prompt as `27_example_wired.txt`, because the other two
+  examples used `Arrow` and explicit `Line` points and therefore contradicted RULE 3.
+
+**THE FIRST COMMAND NEXT SESSION:**
+
+    python bench/run_web.py bench/web_inputs/peppermint.txt bench/web_inputs/peppermint.story.txt --reps 3
+
+**Then grep the generated script for `wire(`.** If it is there, the wire-over-block fault is gone structurally
+and the numbers should show it. If it is not, the rule needs to be louder or the example more prominent -- the
+router itself is already proven, so do not touch it.
+
 ## 5. What to do next, in order
 1. **Re-run the 3-rep measurement** — the library-fit result is n=1 because the daily Gemini free quota (20
    requests) ran out. `python bench/run_web.py bench/web_inputs/peppermint.txt bench/web_inputs/peppermint.story.txt --reps 3`
