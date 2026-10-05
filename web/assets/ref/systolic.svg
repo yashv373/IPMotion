@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 380" font-family="Consolas,monospace">
+<defs><marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="#2fbf71"/></marker>
+<marker id="w" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="#7b5cd6"/></marker>
+<marker id="y" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="#1f6fb8"/></marker></defs>
+<rect width="640" height="380" fill="#ffffff"/>
+<text x="320" y="26" text-anchor="middle" font-size="15" font-weight="bold" fill="#14304d">4x4 output-stationary systolic array</text>
+
+<!-- weight inputs, one per column, flowing down -->
+<text x="200" y="58" text-anchor="middle" font-size="12" fill="#5b45a8">w0</text>
+<text x="280" y="58" text-anchor="middle" font-size="12" fill="#5b45a8">w1</text>
+<text x="360" y="58" text-anchor="middle" font-size="12" fill="#5b45a8">w2</text>
+<text x="440" y="58" text-anchor="middle" font-size="12" fill="#5b45a8">w3</text>
+<line x1="200" y1="64" x2="200" y2="84" stroke="#7b5cd6" stroke-width="2" marker-end="url(#w)"/>
+<line x1="280" y1="64" x2="280" y2="84" stroke="#7b5cd6" stroke-width="2" marker-end="url(#w)"/>
+<line x1="360" y1="64" x2="360" y2="84" stroke="#7b5cd6" stroke-width="2" marker-end="url(#w)"/>
+<line x1="440" y1="64" x2="440" y2="84" stroke="#7b5cd6" stroke-width="2" marker-end="url(#w)"/>
+
+<!-- the 16 processing elements -->
+<g fill="#e8f1fb" stroke="#1f6fb8" stroke-width="2">
+<rect x="168" y="86" width="64" height="48" rx="6"/><rect x="248" y="86" width="64" height="48" rx="6"/><rect x="328" y="86" width="64" height="48" rx="6"/><rect x="408" y="86" width="64" height="48" rx="6"/>
+<rect x="168" y="150" width="64" height="48" rx="6"/><rect x="248" y="150" width="64" height="48" rx="6"/><rect x="328" y="150" width="64" height="48" rx="6"/><rect x="408" y="150" width="64" height="48" rx="6"/>
+<rect x="168" y="214" width="64" height="48" rx="6"/><rect x="248" y="214" width="64" height="48" rx="6"/><rect x="328" y="214" width="64" height="48" rx="6"/><rect x="408" y="214" width="64" height="48" rx="6"/>
+<rect x="168" y="278" width="64" height="48" rx="6"/><rect x="248" y="278" width="64" height="48" rx="6"/><rect x="328" y="278" width="64" height="48" rx="6"/><rect x="408" y="278" width="64" height="48" rx="6"/>
+</g>
+<g text-anchor="middle" font-size="12" font-weight="bold" fill="#14304d">
+<text x="200" y="115">PE00</text><text x="280" y="115">PE01</text><text x="360" y="115">PE02</text><text x="440" y="115">PE03</text>
+<text x="200" y="179">PE10</text><text x="280" y="179">PE11</text><text x="360" y="179">PE12</text><text x="440" y="179">PE13</text>
+<text x="200" y="243">PE20</text><text x="280" y="243">PE21</text><text x="360" y="243">PE22</text><text x="440" y="243">PE23</text>
+<text x="200" y="307">PE30</text><text x="280" y="307">PE31</text><text x="360" y="307">PE32</text><text x="440" y="307">PE33</text>
+</g>
+
+<!-- activations enter from the left, one row each -->
+<g font-size="11" fill="#2a7a4b" text-anchor="end">
+<text x="152" y="114">a0*</text><text x="152" y="178">a1*</text><text x="152" y="242">a2*</text><text x="152" y="306">a3*</text>
+</g>
+<g stroke="#2fbf71" stroke-width="2" marker-end="url(#a)">
+<line x1="156" y1="110" x2="164" y2="110"/><line x1="156" y1="174" x2="164" y2="174"/>
+<line x1="156" y1="238" x2="164" y2="238"/><line x1="156" y1="302" x2="164" y2="302"/>
+</g>
+<!-- data moves right along a row and down a column -->
+<g stroke="#2fbf71" stroke-width="2" marker-end="url(#a)" opacity=".75">
+<line x1="232" y1="110" x2="246" y2="110"/><line x1="312" y1="110" x2="326" y2="110"/><line x1="392" y1="110" x2="406" y2="110"/>
+<line x1="232" y1="302" x2="246" y2="302"/><line x1="312" y1="302" x2="326" y2="302"/><line x1="392" y1="302" x2="406" y2="302"/>
+</g>
+<g stroke="#7b5cd6" stroke-width="2" marker-end="url(#w)" opacity=".75">
+<line x1="200" y1="134" x2="200" y2="148"/><line x1="200" y1="198" x2="200" y2="212"/><line x1="200" y1="262" x2="200" y2="276"/>
+<line x1="440" y1="134" x2="440" y2="148"/><line x1="440" y1="198" x2="440" y2="212"/><line x1="440" y1="262" x2="440" y2="276"/>
+</g>
+
+<!-- partial sums leave the bottom -->
+<g stroke="#1f6fb8" stroke-width="2" marker-end="url(#y)">
+<line x1="200" y1="326" x2="200" y2="344"/><line x1="280" y1="326" x2="280" y2="344"/>
+<line x1="360" y1="326" x2="360" y2="344"/><line x1="440" y1="326" x2="440" y2="344"/>
+</g>
+<g font-size="12" fill="#1f5fa8" text-anchor="middle">
+<text x="200" y="360">y0</text><text x="280" y="360">y1</text><text x="360" y="360">y2</text><text x="440" y="360">y3</text>
+</g>
+
+<text x="60" y="200" font-size="11" fill="#2a7a4b">activations</text>
+<text x="60" y="215" font-size="11" fill="#2a7a4b">flow right</text>
+<text x="520" y="200" font-size="11" fill="#5b45a8">weights</text>
+<text x="520" y="215" font-size="11" fill="#5b45a8">flow down</text>
+</svg>

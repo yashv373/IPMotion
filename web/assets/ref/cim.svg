@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 340" font-family="Consolas,monospace">
+<defs><marker id="c" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="#1f6fb8"/></marker></defs>
+<rect width="640" height="340" fill="#ffffff"/>
+<text x="320" y="24" text-anchor="middle" font-size="15" font-weight="bold" fill="#14304d">Resistive crossbar: compute where the data is</text>
+
+<!-- row decoder -->
+<rect x="40" y="62" width="74" height="168" rx="8" fill="#e8f1fb" stroke="#1f6fb8" stroke-width="3"/>
+<text x="77" y="140" text-anchor="middle" font-size="12" font-weight="bold" fill="#14304d">Row</text>
+<text x="77" y="158" text-anchor="middle" font-size="12" font-weight="bold" fill="#14304d">decoder</text>
+
+<!-- wordlines: one per row, leaving the decoder at its own height -->
+<g stroke="#c2860a" stroke-width="2.5">
+<line x1="114" y1="86" x2="520" y2="86"/><line x1="114" y1="134" x2="520" y2="134"/>
+<line x1="114" y1="182" x2="520" y2="182"/><line x1="114" y1="230" x2="520" y2="230"/>
+</g>
+<g font-size="10" fill="#8a5f05" text-anchor="end">
+<text x="110" y="80">WL0</text><text x="110" y="128">WL1</text><text x="110" y="176">WL2</text><text x="110" y="224">WL3</text>
+</g>
+
+<!-- bitlines: one per column, down into a sense amp -->
+<g stroke="#1f6fb8" stroke-width="2.5">
+<line x1="170" y1="70" x2="170" y2="252"/><line x1="240" y1="70" x2="240" y2="252"/>
+<line x1="310" y1="70" x2="310" y2="252"/><line x1="380" y1="70" x2="380" y2="252"/>
+<line x1="450" y1="70" x2="450" y2="252"/><line x1="520" y1="70" x2="520" y2="252"/>
+</g>
+<g font-size="10" fill="#1f5fa8" text-anchor="middle">
+<text x="170" y="62">BL0</text><text x="240" y="62">BL1</text><text x="310" y="62">BL2</text>
+<text x="380" y="62">BL3</text><text x="450" y="62">BL4</text><text x="520" y="62">BL5</text>
+</g>
+
+<!-- a cell sits where a wordline crosses a bitline; filled = stores a 1 -->
+<g stroke="#4a5568" stroke-width="1.5">
+<rect x="162" y="78" width="16" height="16" fill="#2fbf71"/><rect x="232" y="78" width="16" height="16" fill="#ffffff"/><rect x="302" y="78" width="16" height="16" fill="#2fbf71"/><rect x="372" y="78" width="16" height="16" fill="#2fbf71"/><rect x="442" y="78" width="16" height="16" fill="#ffffff"/><rect x="512" y="78" width="16" height="16" fill="#ffffff"/>
+<rect x="162" y="126" width="16" height="16" fill="#ffffff"/><rect x="232" y="126" width="16" height="16" fill="#2fbf71"/><rect x="302" y="126" width="16" height="16" fill="#2fbf71"/><rect x="372" y="126" width="16" height="16" fill="#ffffff"/><rect x="442" y="126" width="16" height="16" fill="#2fbf71"/><rect x="512" y="126" width="16" height="16" fill="#ffffff"/>
+<rect x="162" y="174" width="16" height="16" fill="#2fbf71"/><rect x="232" y="174" width="16" height="16" fill="#2fbf71"/><rect x="302" y="174" width="16" height="16" fill="#ffffff"/><rect x="372" y="174" width="16" height="16" fill="#ffffff"/><rect x="442" y="174" width="16" height="16" fill="#ffffff"/><rect x="512" y="174" width="16" height="16" fill="#2fbf71"/>
+<rect x="162" y="222" width="16" height="16" fill="#ffffff"/><rect x="232" y="222" width="16" height="16" fill="#ffffff"/><rect x="302" y="222" width="16" height="16" fill="#2fbf71"/><rect x="372" y="222" width="16" height="16" fill="#ffffff"/><rect x="442" y="222" width="16" height="16" fill="#2fbf71"/><rect x="512" y="222" width="16" height="16" fill="#2fbf71"/>
+</g>
+
+<!-- sense amplifiers: where the analog current becomes a bit -->
+<g fill="#e8f1fb" stroke="#1f6fb8" stroke-width="2">
+<rect x="150" y="252" width="40" height="26" rx="5"/><rect x="220" y="252" width="40" height="26" rx="5"/><rect x="290" y="252" width="40" height="26" rx="5"/>
+<rect x="360" y="252" width="40" height="26" rx="5"/><rect x="430" y="252" width="40" height="26" rx="5"/><rect x="500" y="252" width="40" height="26" rx="5"/>
+</g>
+<g text-anchor="middle" font-size="11" font-weight="bold" fill="#14304d">
+<text x="170" y="270">SA</text><text x="240" y="270">SA</text><text x="310" y="270">SA</text><text x="380" y="270">SA</text><text x="450" y="270">SA</text><text x="520" y="270">SA</text>
+</g>
+<g stroke="#1f6fb8" stroke-width="2" marker-end="url(#c)">
+<line x1="170" y1="278" x2="170" y2="294"/><line x1="240" y1="278" x2="240" y2="294"/><line x1="310" y1="278" x2="310" y2="294"/>
+<line x1="380" y1="278" x2="380" y2="294"/><line x1="450" y1="278" x2="450" y2="294"/><line x1="520" y1="278" x2="520" y2="294"/>
+</g>
+<rect x="140" y="296" width="410" height="24" rx="6" fill="#e8f1fb" stroke="#1f6fb8" stroke-width="2"/>
+<text x="345" y="313" text-anchor="middle" font-size="12" font-weight="bold" fill="#14304d">Digital output register</text>
+<text x="576" y="180" font-size="10" fill="#2a7a4b">filled cell</text>
+<text x="576" y="194" font-size="10" fill="#2a7a4b">holds a 1</text>
+</svg>

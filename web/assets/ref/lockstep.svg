@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 340" font-family="Consolas,monospace">
+<defs><marker id="k" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="#4a5568"/></marker>
+<marker id="r" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="#d04545"/></marker></defs>
+<rect width="640" height="340" fill="#ffffff"/>
+<text x="320" y="24" text-anchor="middle" font-size="15" font-weight="bold" fill="#14304d">Dual-core lockstep (DCLS)</text>
+
+<rect x="96" y="40" width="448" height="212" rx="12" fill="#f3f6fb" stroke="#8aa0bb" stroke-width="2" stroke-dasharray="7 5"/>
+<text x="112" y="62" font-size="12" font-weight="bold" fill="#5a6b80">Safety island (ASIL-D)</text>
+
+<g fill="#e8f1fb" stroke="#1f6fb8" stroke-width="3">
+<rect x="124" y="78" width="160" height="62" rx="8"/>
+<rect x="356" y="78" width="160" height="62" rx="8"/>
+<rect x="244" y="182" width="152" height="54" rx="8"/>
+</g>
+<g text-anchor="middle" fill="#14304d">
+<text x="204" y="104" font-size="14" font-weight="bold">Core A</text><text x="204" y="124" font-size="11">primary</text>
+<text x="436" y="104" font-size="14" font-weight="bold">Core B</text><text x="436" y="124" font-size="11">redundant, delayed</text>
+<text x="320" y="214" font-size="14" font-weight="bold">Comparator</text>
+</g>
+
+<!-- the same instruction stream reaches both cores -->
+<text x="20" y="104" font-size="11" fill="#2a3b4d">instruction</text>
+<text x="20" y="118" font-size="11" fill="#2a3b4d">and data</text>
+<line x1="86" y1="109" x2="120" y2="109" stroke="#4a5568" stroke-width="2.5" marker-end="url(#k)"/>
+<line x1="288" y1="109" x2="352" y2="109" stroke="#4a5568" stroke-width="2.5" marker-end="url(#k)"/>
+
+<!-- each core enters its own half of the comparator, so the two paths never cross -->
+<line x1="204" y1="144" x2="282" y2="178" stroke="#4a5568" stroke-width="2.5" marker-end="url(#k)"/>
+<line x1="436" y1="144" x2="358" y2="178" stroke="#4a5568" stroke-width="2.5" marker-end="url(#k)"/>
+
+<!-- mismatch raises the flag -->
+<line x1="320" y1="240" x2="320" y2="274" stroke="#d04545" stroke-width="2.5" marker-end="url(#r)"/>
+<rect x="244" y="276" width="152" height="44" rx="8" fill="#fdeaea" stroke="#d04545" stroke-width="3"/>
+<text x="320" y="304" text-anchor="middle" font-size="13" font-weight="bold" fill="#8c2020">Fault flag</text>
+<line x1="400" y1="298" x2="452" y2="298" stroke="#d04545" stroke-width="2.5" marker-end="url(#r)"/>
+<text x="460" y="294" font-size="11" fill="#8c2020">to the safety</text>
+<text x="460" y="308" font-size="11" fill="#8c2020">manager</text>
+
+<text x="320" y="166" text-anchor="middle" font-size="11" fill="#6b7280">both results, compared every cycle</text>
+</svg>
