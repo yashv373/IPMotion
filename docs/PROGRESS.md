@@ -530,3 +530,40 @@ pacing rule AND this wiring rule together, against the `+ strict names` row. If 
 the likely cause since nothing else targets them; if they do not, the rule failed and should be reverted rather
 than elaborated. Attribution is muddier than it should be -- the clean alternative was to leave the rule out
 overnight, which would have wasted the next session's first run.
+
+## Why the demo looked unchanged, and the fix that followed (2026-10-05)
+
+**User's report:** after four new examples, the Peppermint demo still looked bad -- overflows, mismatches, wrong
+wiring. Correct observation; both causes were mine and neither was the examples.
+
+1. **The four new examples are not in the live prompt.** Held out as unmeasured, so they could not have changed
+   anything. The user was asked to judge an effect that was never switched on.
+2. **The clip on the site was stale.** `generated-peppermint.mp4` was rendered at 21:51; the prompt changed at
+   22:05 (strict names), 23:49 (library fit + pacing) and 00:35 (RULE 1). It predated three of the four fixes
+   while being labelled "what the generator makes today".
+
+**The real bug, found by testing the fix against the model's own numbers.** `DomainGroup` fitting works: the
+38-character AON title in its 3.2-unit box shrinks from 6.88 units to 2.79, comfortably inside. It fits the box
+and still lands on the blocks, because it is drawn INSIDE the region at the top-left and the model leaves no
+header room. **A region title cannot know where the blocks inside it were put.** So the title now draws ABOVE
+the border, where nothing inside the region can reach it, falling back to the corner when there is no room
+above. Height capped harder too: 14% of the region or 0.46 units, whichever is smaller.
+
+**Demonstrated without spending a model call:** re-rendering the SAME generated script against the fixed library
+puts both domain titles cleanly above their boxes. Same model output, better picture. That is the argument for
+fixing the library rather than the prompt, shown in isolation.
+
+**RULE 1 result (1 rep, quota ran out again):** arrows drawn went **21 -> 30** of 32 listed, so the completeness
+rule worked on exactly what it targeted. But wires scored 18/32 and extras rose 6 -> 16: it now draws nearly all
+of them and gets more of them wrong. **The bottleneck moved from "stops early" to "joins the wrong pair".**
+
+**RULE 2 added** from what that frame then showed: a dozen block names were unreadable because wires were drawn
+across them. Wires are added before blocks, or with `z_index(-1)`, and short wires between neighbours are
+preferred over long ones that cross everything between.
+
+**Reference diagrams** for the four new examples are drawn by us from the structure described in each cited work
+and labelled as such -- reproducing a paper's own figure on a public page is someone else's copyright. The
+citation underneath points at the real ones.
+
+**Next:** wiring accuracy, not completeness. 3 reps when the quota resets, to see whether RULE 2 recovers the
+hit rate that RULE 1 traded away.
