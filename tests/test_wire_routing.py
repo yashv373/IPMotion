@@ -6,7 +6,7 @@ ago inside diagram.py, where a generated script can never reach it. These tests 
 """
 import pytest
 
-from ipmotion_lib import IPBlock, Theme, _box_of, _hits, route_points, wire
+from ipmotion_lib import IPBlock, Theme, _box_of, _hits, wire, wire_points
 
 TH = Theme()
 
@@ -23,27 +23,27 @@ def crosses(pts, box):
 
 def test_a_straight_run_is_kept_when_nothing_is_in_the_way():
     a, b = block(-3, 0), block(3, 0)
-    pts = route_points(a, b, avoid=[a, b])
+    pts = wire_points(a, b, avoid=[a, b])
     assert len(pts) == 2, "two clear blocks should get the short route, not a detour"
 
 
 def test_a_block_in_the_way_is_routed_around():
     a, mid, b = block(-4, 0), block(0, 0), block(4, 0)
-    pts = route_points(a, b, avoid=[a, mid, b])
+    pts = wire_points(a, b, avoid=[a, mid, b])
     assert not crosses(pts, _box_of(mid, 0.1)), "the wire still runs through the middle block"
     assert len(pts) > 2, "going around needs more than a straight line"
 
 
 def test_a_block_stacked_between_two_others_is_routed_around():
     a, mid, b = block(0, 3), block(0, 0), block(0, -3)
-    pts = route_points(a, b, avoid=[a, mid, b])
+    pts = wire_points(a, b, avoid=[a, mid, b])
     assert not crosses(pts, _box_of(mid, 0.1))
 
 
 def test_several_obstacles_are_all_avoided():
     a, b = block(-5.5, 0), block(5.5, 0)
     mids = [block(x, 0) for x in (-2, 0, 2)]
-    pts = route_points(a, b, avoid=[a, b] + mids)
+    pts = wire_points(a, b, avoid=[a, b] + mids)
     for m in mids:
         assert not crosses(pts, _box_of(m, 0.1)), "one of the blocks in between is still crossed"
 
@@ -57,7 +57,7 @@ def test_the_wire_sits_behind_the_blocks():
 
 def test_the_endpoints_stay_on_the_two_blocks():
     a, b = block(-4, 0), block(4, 0)
-    pts = route_points(a, b, avoid=[a, b])
+    pts = wire_points(a, b, avoid=[a, b])
     start, end = pts[0], pts[-1]
     ab, bb = _box_of(a, 0.06), _box_of(b, 0.06)
     on = lambda p, box: box[0] <= p[0] <= box[2] and box[1] <= p[1] <= box[3]

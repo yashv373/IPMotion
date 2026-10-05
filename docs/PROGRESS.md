@@ -579,7 +579,7 @@ All three were library omissions, not prompt problems, and the same shape as the
 which is why it runs across OTBN, KMAC, HMAC and hides their names. The engine has solved this for a year inside
 `diagram.py._avoid`, where a generated script cannot reach it. So the library now has its own router:
 
-    route_points(src, dst, avoid=[...])   -> orthogonal points that go around the obstacles
+    wire_points(src, dst, avoid=[...])   -> orthogonal points that go around the obstacles
     wire(src, dst, avoid=blocks)          -> a VGroup of segments, z_index -1 so it sits BEHIND the blocks
 
 It tries the short routes first (shared x or y band, then L, then Z) and falls back to a detour through a

@@ -1691,7 +1691,7 @@ def _clear_path(pts, boxes):
     return all(not _hits(pts[i], pts[i + 1], b) for i in range(len(pts) - 1) for b in boxes)
 
 
-def route_points(src, dst, avoid=(), pad=0.10):
+def wire_points(src, dst, avoid=(), pad=0.10):
     """Orthogonal points from the edge of src to the edge of dst that go AROUND everything in avoid.
 
     A straight line between two blocks runs over whatever sits between them, which is the single most common
@@ -1751,7 +1751,7 @@ def wire(src, dst, avoid=(), color="#9CA3AF", stroke_width=4, heads="to", pad=0.
     heads: "to" (arrow at dst), "both", or "none". z_index defaults to -1 so a wire sits BEHIND the blocks and
     can never hide a block's name.
     """
-    pts = route_points(src, dst, avoid=avoid, pad=pad)
+    pts = wire_points(src, dst, avoid=avoid, pad=pad)
     segs = VGroup()
     for i in range(len(pts) - 1):
         p, q = [pts[i][0], pts[i][1], 0.0], [pts[i + 1][0], pts[i + 1][1], 0.0]
