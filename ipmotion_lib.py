@@ -159,7 +159,8 @@ class DomainGroup(VGroup):
     the blocks underneath it. Pass fit=False if the caller places and sizes the title itself."""
 
     TITLE_PAD = 0.2          # air either side of the title
-    TITLE_SHARE = 0.26       # the title never eats more than this share of the region's height
+    TITLE_SHARE = 0.14       # the title never eats more than this share of the region's height
+    TITLE_MAX_H = 0.46       # ...nor more than this in absolute terms, however tall the region is
 
     def __init__(self, title, x, y, w, h, fill, stroke=None, dashed=False, fit=True):
         super().__init__()
@@ -174,8 +175,18 @@ class DomainGroup(VGroup):
         kw = dict(color="#94A3B8", font="Arial", weight=BOLD, font_size=24)
         self.txt = Text(title, **kw)
         if fit:
-            self.txt = self._fit_title(title, kw, max(w - 2 * self.TITLE_PAD, 0.1), max(h * self.TITLE_SHARE, 0.1))
-        self.txt.move_to(self.bg.get_corner(UL) + RIGHT*0.2 + DOWN*0.4, aligned_edge=LEFT)
+            room_h = max(min(h * self.TITLE_SHARE, self.TITLE_MAX_H), 0.1)
+            self.txt = self._fit_title(title, kw, max(w - 2 * self.TITLE_PAD, 0.1), room_h)
+            # Sit the title ABOVE the box rather than inside it. A region's title has no way of knowing where
+            # the blocks inside it were put, so a title drawn in the top-left corner lands on whatever is there
+            # -- which is exactly what happened on every generated diagram. Outside the border it cannot.
+            top = self.bg.get_corner(UL) + UP * (self.txt.height / 2 + 0.07) + RIGHT * 0.1
+            if top[1] + self.txt.height / 2 < config.frame_height / 2 - 0.1:
+                self.txt.move_to(top, aligned_edge=LEFT)
+            else:                                   # no room above: keep the old inside-the-corner placement
+                self.txt.move_to(self.bg.get_corner(UL) + RIGHT * 0.2 + DOWN * 0.4, aligned_edge=LEFT)
+        else:
+            self.txt.move_to(self.bg.get_corner(UL) + RIGHT*0.2 + DOWN*0.4, aligned_edge=LEFT)
         self.add(self.bg, self.txt)
 
     @staticmethod

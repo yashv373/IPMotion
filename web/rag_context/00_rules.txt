@@ -20,6 +20,13 @@ correct -- so the problem is not that your wires are wrong, it is that you stop 
   - If the user lists 32 connections, your script contains 32 arrow objects. Count them before you finish.
   - A diagram missing a third of its wires is wrong even if every block is perfect.
 
+RULE 2 -- WIRES GO BEHIND BLOCKS, AND BLOCKS GO ON TOP.
+Add every wire to the scene BEFORE the blocks it connects, so a wire that passes over a block is hidden by it
+instead of hiding the block's name. Measured on a real run: a dozen block names were unreadable because an
+arrow was drawn across them. If you must add a wire later, give it arrow.set_z_index(-1).
+Prefer short wires between neighbours. A long straight wire between two distant blocks will cross everything in
+between, and the reader cannot tell which blocks it actually joins.
+
 RULES (follow exactly):
 1. Start with `from manim import *` then `from ipmotion_lib import *`.
 2. NEVER set config.pixel_width, config.pixel_height or config.frame_width.
