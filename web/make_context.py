@@ -1,7 +1,7 @@
 """Run by hand when ipmotion_lib.py or the rules change: python web/make_context.py
 Rewrites web/rag_context/10_library_api.txt (signatures only) and 20_example_axi.txt.
 Not part of the site; the site only serves the .txt files."""
-import ast, pathlib
+import ast, pathlib, shutil
 root = pathlib.Path(__file__).resolve().parent.parent
 out = root / "web" / "rag_context"
 tree = ast.parse((root / "ipmotion_lib.py").read_text(encoding="utf-8"))
@@ -29,3 +29,5 @@ sys.path.insert(0, str(root))
 from ipmotion.emit import emit  # noqa: E402
 (out / "25_example_earlgrey.txt").write_text(emit("bench/stories/earlgrey_ibex_uart_read.yaml"), encoding="utf-8")
 (out / "26_example_darjeeling.txt").write_text(emit("bench/stories/darjeeling_ibex_uart_read.yaml"), encoding="utf-8")
+# the example that teaches wire(); copied, not emitted, because it is hand-written to show the idiom
+shutil.copy(root / "gold_examples" / "wired_soc_fabric.py", out / "27_example_wired.txt")

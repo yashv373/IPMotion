@@ -86,3 +86,10 @@ scene = "CimCrossbarArray"
 lint_role = "baseline"
 reason = "Renders with 0 lint errors and 0 warnings. The only example where the blocks are the intersections: wordlines and bitlines as full-length lines with cells at computed crossings, cells recoloured in place instead of a packet travelling, and analog and digital visually separated."
 notes = "Structure cited in docs/SOURCES.md (ISAAC and PRIME, ISCA 2016). Added 2026-10-05."
+
+[files."wired_soc_fabric.py"]
+status = "indexable"
+scene = "WiredSocFabric"
+lint_role = "baseline"
+reason = "Renders with 0 lint errors and 0 warnings. The example that teaches wire(): seven blocks, seven links, and not one wire coordinate written by hand. Every other example places wires by hand, which is exactly what a model cannot do."
+notes = "Generic AMBA-style master/interconnect/slave organisation, cited in docs/SOURCES.md. Added 2026-10-05."

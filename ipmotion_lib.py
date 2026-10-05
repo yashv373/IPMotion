@@ -175,6 +175,10 @@ class DomainGroup(VGroup):
                                        stroke_color=stroke, stroke_width=2.5)
 
         self.bg.move_to([x, y, 0])
+        # A region is a backdrop. Without this it sits at the same depth as everything else, and a wire given a
+        # negative z_index to keep it behind the blocks ends up behind the region's opaque fill instead, which
+        # makes it vanish completely. Layering is: region -2, wires -1, blocks 0.
+        self.bg.set_z_index(-2)
         kw = dict(color="#94A3B8", font="Arial", weight=BOLD, font_size=24)
         self.txt = Text(title, **kw)
         if fit:
@@ -1737,10 +1741,23 @@ def wire_points(src, dst, avoid=(), pad=0.10):
             cands.append([[a[2], acy], [x, acy], [x, bcy], [b[2], bcy]])
             cands.append([[a[0], acy], [x, acy], [x, bcy], [b[0], bcy]])
 
-    for pts in cands:
-        if _clear_path(pts, obs):
-            return [[float(x), float(y)] for x, y in pts]
-    return [[float(x), float(y)] for x, y in cands[0]]      # nothing is clear: the shortest one, still honest
+    def length(pts):
+        return sum(abs(pts[i + 1][0] - pts[i][0]) + abs(pts[i + 1][1] - pts[i][1]) for i in range(len(pts) - 1))
+
+    # Take the SHORTEST clear route, not the first one found. Returning the first meant a wire would escape
+    # right around the outside of the drawing when a near channel was available, which avoids the blocks and
+    # tells the reader nothing about what is connected to what.
+    def hits(pts):
+        return sum(1 for i in range(len(pts) - 1) for o in obs if _hits(pts[i], pts[i + 1], o))
+
+    clear = [p for p in cands if _clear_path(p, obs)]
+    if clear:
+        best = min(clear, key=length)
+    else:
+        # A dense layout can leave no clean route at all. Then take the one that crosses the FEWEST blocks,
+        # and only use length to break the tie -- one block clipped is far better than four.
+        best = min(cands, key=lambda p: (hits(p), length(p)))
+    return [[float(x), float(y)] for x, y in best]
 
 
 def wire(src, dst, avoid=(), color="#9CA3AF", stroke_width=4, heads="to", pad=0.10, z_index=-1):

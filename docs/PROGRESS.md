@@ -604,3 +604,32 @@ model is given.
 **Not yet measured** -- the quota is spent. The next 3-rep run is the first that can show whether the model
 actually calls `wire()`. If it does, the wire-over-block fault disappears structurally rather than by
 persuasion; if it does not, the rule needs to be louder, not the router better.
+
+## Wiring: the router proved out on a real layout, and an example that teaches it (2026-10-05)
+
+**Shown without a model call, which is how it should have been done hours earlier.** The generator's own script
+was already on disk, so the new library could be applied to the layout the model produced. Result in
+`docs/wiring_after.png`: same blocks, every wire routed by `wire()`, no wire crossing a block name, and the
+connections readable. `docs/wiring_before_shortest.png` is the intermediate where the router was still wrong.
+
+**Three bugs in my own router, every one of them invisible to its nine unit tests** (which only exercise two
+blocks on an empty canvas) and all three found in a single render against a real layout:
+1. it returned the FIRST clear route instead of the shortest, so wires escaped right around the outside of the
+   drawing -- avoiding every block and telling the reader nothing;
+2. `z_index=-1` put wires BEHIND the region's opaque fill, so most of them vanished completely;
+3. regions had no depth of their own. Layering is now explicit: region -2, wires -1, blocks 0.
+A fourth improvement followed: when a dense layout leaves no clean route at all, take the route that crosses the
+FEWEST blocks and use length only to break the tie, instead of the shortest-and-damn-the-crossings.
+
+**The reason RULE 3 would have been ignored.** Neither example in the live prompt used `wire()` -- AXI draws
+`Arrow`, the emitted Earlgrey draws explicit `Line` points. The examples contradicted the rule, and a model
+imitates examples harder than it obeys rules. So `gold_examples/wired_soc_fabric.py` was written for exactly
+this: seven blocks, seven links, **not one wire coordinate typed by hand**, 0 lint errors and 0 warnings. It is
+now in the live prompt as `27_example_wired.txt`.
+
+**Live prompt is now:** rules, library API, AXI, Earlgrey, wired SoC fabric, input notes.
+
+**Still unmeasured, and this is the whole open question:** will the model actually call `wire()`? The router is
+proven; the example now demonstrates it; the rule demands it. The Gemini free tier (20/day) is spent, and there
+is no `.env`, so that key is the only provider configured. **The first command next session answers it**, and
+the single thing to grep for in the generated script is `wire(`.

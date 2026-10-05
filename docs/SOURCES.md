@@ -25,6 +25,7 @@ OpenTitan is licensed under Apache-2.0: https://github.com/lowRISC/opentitan/blo
 | `lockstep_safety_island.py` | Dual-core lockstep safety island | ARM, "Cortex-R5 Technical Reference Manual" (redundant core comparison and the decorrelating delay). ISO 26262-5, hardware requirements for ASIL-D. Infineon AURIX TriCore safety documentation. |
 | `cim_crossbar_array.py` | Resistive compute-in-memory crossbar | A. Shafiee et al., "ISAAC: A Convolutional Neural Network Accelerator with In-Situ Analog Arithmetic in Crossbars", ISCA 2016. P. Chi et al., "PRIME: A Novel Processing-in-Memory Architecture for Neural Network Computation in ReRAM-Based Main Memory", ISCA 2016. |
 | `mesi_cache_fsm.py` | MESI cache-coherence state machine | M.S. Papamarcos and J.H. Patel, "A Low-Overhead Coherence Solution for Multiprocessors with Private Cache Memories", ISCA 1984. Hennessy & Patterson, "Computer Architecture: A Quantitative Approach", multiprocessor cache-coherence chapter. |
+| `wired_soc_fabric.py` | Generic SoC master / interconnect / slave fabric | ARM, "AMBA AXI and ACE Protocol Specification"; the standard master-interconnect-slave organisation. |
 | `axi_read_handshake.py` | AXI4 read address / read data handshake | ARM, "AMBA AXI and ACE Protocol Specification" (AXI4), sections on the AR and R channels. |
 
 ## What is ours
