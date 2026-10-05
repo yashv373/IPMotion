@@ -399,7 +399,7 @@ class Diagram(VGroup):
         text_dx = (left_strip - right_strip) / 2
         wrapped = wrap_label(b["label"] or "", tw, thh)
         blk = IPBlock(wrapped, th, width=w, height=h, fill=fill, stroke=stroke, text_color=th.text,
-                      line_spacing=LINE_SPACING)
+                      line_spacing=LINE_SPACING, min_font_size=0)   # dense whole-chip mode: labels are wrapped above
         blk.move_to([cx, cy, 0])
         if "dashed_outline" in attrs:
             blk.bg.glow1.set_opacity(0)

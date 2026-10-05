@@ -18,6 +18,7 @@ def route_points(p0, side_a, q0, side_b, style='manhattan', stub=0.3, jog=0.8)
 class DomainGroup(VGroup)
     # A labelled region. The title fits itself to the box (`fit=True`, the default): a long domain name is
     def __init__(self, title, x, y, w, h, fill, stroke=None, dashed=False, fit=True)
+def domain_around(title, blocks, fill, stroke=None, pad=0.35, **kw)
 class GlowBox(VGroup)
     def __init__(self, width, height, color, fill_color, stroke_width=2.0, corner_radius=0.15, dotted=False)
     def set_color(self, color)

@@ -1,13 +1,13 @@
 <!doctype html>
 <html lang="en" data-theme="dark"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>IPMotion Generator</title><meta name="description" content="IPMotion: describe a hardware block diagram story, get a Manim animation script. Bring your own API key; nothing runs on our servers.">
+<title>IPMotion Generator</title><meta name="description" content="IPMotion is a deterministic video compiler for hardware block diagrams, driven by an LLM. Describe a data flow, get a Manim script you own. Bring your own API key; nothing runs on our servers.">
 <link rel="icon" href="favicon.ico" sizes="any"><link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png"><link rel="apple-touch-icon" href="assets/apple-touch-icon.png"><meta name="theme-color" content="#0b0d12"><meta property="og:title" content="IPMotion Generator"><meta property="og:image" content="assets/logo.png">
 <link rel="manifest" href="site.webmanifest"><meta name="theme-color" content="#0b0d12"><link rel="stylesheet" href="style.css"></head><body>
 <header><div class="wrap"><a class="brand" href="index.html" aria-label="IPMotion home"><img src="assets/logo.png" alt="IPMotion" width="105" height="38"></a><nav><a href="index.html" aria-current=page>Generator</a><a href="how-it-works.html">How it works</a><a href="changelog.html">Changelog</a></nav>
 <span class="credit">Ideated by Yashvardhan Singh | Development by Claude Code</span></div></header>
 <div id="popbg" aria-hidden="true"></div><main class="wrap">
-<section class="hero"><video class="hero-bg" src="assets/video/hero-bg.mp4?v=2" autoplay muted loop playsinline aria-hidden="true" width="960" height="540" preload="metadata"></video><div class="hero-in"><img class="hero-logo" src="assets/logo.png" alt="IPMotion by Yashvardhan Singh" width="440" height="160"><h1>Hardware block diagrams, animated.</h1>
-<p>IPMotion draws chip and IP-block diagrams in Manim and plays a story over them: a read request travelling through a crossbar, a handshake between master and slave. Describe the story, paste your block diagram, and get a Python script you run on your own machine. Bring your own LLM key. We run nothing.</p>
+<section class="hero"><video class="hero-bg" src="assets/video/hero-bg.mp4?v=2" autoplay muted loop playsinline aria-hidden="true" width="960" height="540" preload="metadata"></video><div class="hero-in"><img class="hero-logo" src="assets/logo.png" alt="IPMotion by Yashvardhan Singh" width="440" height="160"><h1>A video compiler for hardware, driven by AI.</h1>
+<p><strong>This is not AI video generation.</strong> The pictures are drawn by code &mdash; the same engine 3Blue1Brown uses &mdash; so every block, wire and domain is placed deterministically and the output is a Python file you own, read and edit. The model only writes that file; it never draws a pixel. Describe the story, paste your block diagram, and get a script you run on your own machine. Bring your own LLM key: Google, Anthropic or OpenRouter. We run nothing and store nothing.</p>
 <a class="btn" href="#generator">Open the generator</a></div></section>
 
 <h2>How it works, in 17 seconds</h2>
@@ -28,8 +28,8 @@
 </div>
 
 <h2>What the generator makes today</h2>
-<p class="note">The examples above are drawn by the engine. This one is not: it is the real output of the Generate button, given the Peppermint diagram as plain text, one try, no checking and no fixes. <strong>What it gets right:</strong> every block name character-for-character, both power domains, and the wiring &mdash; the wires run at right angles, go around the blocks instead of through them, and not one of them crosses a block name. Scored against the reference, 0 of its connections join the wrong pair. <strong>What it still gets wrong:</strong> the tall AON crossbar bar sits outside its own domain box and its label is shrunk until it is too small to read, and the "Power Handshake" label is clipped by its own arrow. This is a one-shot run from 2026-10-05. It predates the arrow notation (<code>-&gt;</code>, <code>&lt;-&gt;</code>, <code>--</code>) now described under the diagram box.</p>
-<video class="explainer" src="assets/video/generated-peppermint.mp4?v=3" autoplay muted loop playsinline controls preload="metadata" aria-label="Animation written by the generator in one shot"></video>
+<p class="note">The examples above are drawn by the engine. This one is not: it is the real output of the Generate button, given the Peppermint diagram as plain text, one try, no checking and no fixes. <strong>What it gets right:</strong> every block name character-for-character, both power domains, and the wiring &mdash; the wires run at right angles, go around the blocks instead of through them, and not one of them crosses a block name. Scored against the reference, 0 of its connections join the wrong pair. <strong>What it still gets wrong:</strong> the tall AON crossbar bar sits outside its own domain box, and the "Power Handshake" label is clipped by its own arrow. This is the same one-shot script from 2026-10-05, re-rendered against the current library &mdash; the model was not asked again. The crossbar label now reads vertically along the bar instead of being shrunk to nothing, which is a library guarantee, not something the model got right. It predates the arrow notation (<code>-&gt;</code>, <code>&lt;-&gt;</code>, <code>--</code>) now described under the diagram box.</p>
+<video class="explainer" src="assets/video/generated-peppermint.mp4?v=4" autoplay muted loop playsinline controls preload="metadata" aria-label="Animation written by the generator in one shot"></video>
 <h2 id="generator">Generator</h2>
 <div class="warn"><strong>One shot, no safety net.</strong> Your browser sends one request and shows exactly what the model sends back. Nothing checks it first: the geometric linter and the repair loop only run locally, in the full IPMotion repo. Expect to fix an overlap or a missing wire by hand, and treat this as a strong first draft rather than a finished animation.</div>
 <form id="f" class="card" onsubmit="return false">
@@ -88,7 +88,7 @@ python -m ipmotion.lint script.py</pre>
 <li>Optional check for overlaps and tiny text: <code>python -m ipmotion.lint script.py</code>.</li>
 </ol>
 <p class="note">Stuck? Run the version checks above first. Most failures are FFmpeg or Python missing from PATH.</p>
-<h2>About</h2><p class="card"><img class="about-logo" src="assets/logo.png" alt="IPMotion by Yashvardhan Singh" width="264" height="96">IPMotion turns a hardware block diagram and a short story into a Manim animation.
+<h2>About</h2><p class="card"><img class="about-logo" src="assets/logo.png" alt="IPMotion by Yashvardhan Singh" width="264" height="96">IPMotion turns a hardware block diagram and a short story into a Manim animation, so a data flow inside an IP can be explained once and watched by anyone &mdash; design reviews, handover, training.
 <strong>Ideated by Yashvardhan Singh | Development by Claude Code</strong>. Source: <a href="https://github.com/yashv373/IPMotion">github.com/yashv373/IPMotion</a>.</p>
 </main>
 <footer><div class="wrap"><img class="foot-logo" src="assets/logo.png" alt="IPMotion" width="121" height="44"><p><strong>Ideated by Yashvardhan Singh | Development by Claude Code</strong></p>

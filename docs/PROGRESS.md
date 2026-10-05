@@ -751,3 +751,37 @@ separate: fixing the text size alone will not move regions.
 
 **Quota note for whoever runs this next:** the free tier is 20 requests a day for `gemini-3.5-flash`, and a 3-rep
 run costs 3. Spend them on the re-baseline first.
+
+## Two library guarantees, and the hero rewritten (2026-10-05, late)
+
+**Hero.** The tester's own sentence was better than ours, so the page now leads with it: *"A video compiler for
+hardware, driven by AI"*, and says plainly that this is **not** AI video generation -- the pictures are drawn by
+code, the model only writes the script. Meta description and the About paragraph follow it.
+
+**Guarantee 1: a block title never shrinks below readable.** `IPBlock` scaled its title down without limit, which
+is why the AON crossbar read at roughly 6pt in every generated chip. Now:
+- a tall narrow box (height > 1.3 x width) writes its title **vertically along the bar**, which is what the
+  printed diagrams do;
+- the title never scales below `MIN_TITLE_FONT = 8.0` (about 9.6px cap height at 1080p, above lint's 9px error).
+  A title that sticks out slightly is a layout fault the linter reports; a 4pt title is just dirt on the screen.
+- `min_font_size=0` turns both off. `ipmotion/diagram.py` passes it, because the whole-chip renderer packs 44
+  blocks into one frame, wraps its own labels, and the reference figure's own text is only ~8px. Without that
+  opt-out it broke 8 Peppermint tests -- caught before commit, not after.
+
+**Guarantee 2: `domain_around(title, blocks, fill)`** builds a region from the blocks inside it instead of from
+hand-written x/y/w/h. A block cannot hang outside its own domain if the box is measured from the blocks. This is
+the direct fix for the regions failure, which was a different block in each rep (AON crossbar, then `ibex_core`).
+**RULE 5** points the model at it and says to add the region before the blocks.
+
+**Shown without a model call**, which is the cheap way to prove a library fix: the generator's own script from
+rep 1 was re-rendered against the new library. `docs/bar_label_after.png` is the result -- same model output, the
+AON crossbar label now readable down the bar. The site's "what the generator makes today" clip is that same
+re-render, so the page shows the current library rather than last night's.
+
+`tests/test_readable_labels.py` (6 tests) pins both guarantees: a normal long title still shrinks, a title never
+goes below the floor, a tall bar rotates, a short title in a tall bar is untouched, and every block handed to
+`domain_around` is inside the box it returns. Suite is 220 green.
+
+**Unmeasured, deliberately.** RULE 5 and `domain_around` change the prompt, so the next run measures the
+re-baselined input AND these two rules together. Attribution will be muddy; the alternative was to leave a known
+fix out overnight. Expect regions 1/3 -> 2-3/3 and the `min_text_size` error gone.

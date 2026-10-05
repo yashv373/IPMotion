@@ -216,6 +216,18 @@ class DomainGroup(VGroup):
             cand.scale(scale)
         return cand
 
+def domain_around(title, blocks, fill, stroke=None, pad=0.35, **kw):
+    """A DomainGroup sized FROM the blocks it holds, so a block cannot end up hanging outside its own region.
+
+        main = domain_around("Main power and clock domain", [ibex, rom, sram, crossbar], "#0F172A")
+
+    Hand-computed x/y/w/h is where every generated diagram so far lost a region: the numbers were close but one
+    block always stuck out. `pad` is the air left around the outermost blocks."""
+    group = VGroup(*blocks)
+    cx, cy, _ = group.get_center()
+    return DomainGroup(title, cx, cy, group.width + 2 * pad, group.height + 2 * pad, fill, stroke=stroke, **kw)
+
+
 class GlowBox(VGroup):
     def __init__(self, width, height, color, fill_color, stroke_width=2.0, corner_radius=0.15, dotted=False):
         super().__init__()
@@ -242,10 +254,14 @@ class GlowBox(VGroup):
         self.glow2.set_stroke(color)
         return self
 
+MIN_TITLE_FONT = 8.0     # font_size floor for a block title: ~9.6px cap height at 1080p, above lint's 9px error
+TALL_RATIO = 1.3         # a box this much taller than it is wide is a bar, and its title is written along it
+
+
 class IPBlock(PortMixin, VGroup):
     """Block with a title. ports=[{"label": "ARVALID", "edge": "RIGHT", "name": optional}] declares real,
     connectable ports (block.port("ARVALID")); _left/_right/_top/_bottom always exist as implicit ports."""
-    def __init__(self, title, theme, width=2.5, height=1.5, fill=None, stroke=None, text_color=None, dotted=False, ind=False, font="Consolas", ports=None, line_spacing=0.6):
+    def __init__(self, title, theme, width=2.5, height=1.5, fill=None, stroke=None, text_color=None, dotted=False, ind=False, font="Consolas", ports=None, line_spacing=0.6, min_font_size=None):
         super().__init__()
         self._init_ports()
         self.title = title
@@ -258,15 +274,28 @@ class IPBlock(PortMixin, VGroup):
         if not title:
             title = " "
         self.txt = Text(title, font=font, font_size=16, color=tc, weight=BOLD, line_spacing=line_spacing).move_to(self.bg)
-        
+
         # fixed 0.2 padding, but never below half the block (a block under 0.2 tall used to get a NEGATIVE size,
         # which rotated the title 180 degrees)
         max_w = max(width - 0.2, width * 0.5)
         max_h = max(height - 0.2, height * 0.5)
-        if self.txt.width > max_w and self.txt.width > 0:
-            self.txt.scale(max_w / self.txt.width)
-        if self.txt.height > max_h and self.txt.height > 0:
-            self.txt.scale(max_h / self.txt.height)
+
+        # min_font_size=0 turns both guarantees off: the whole-chip renderer in ipmotion/diagram.py packs 44
+        # blocks into one frame, where the reference figure's own text is ~8px, and it wraps its labels itself.
+        floor = MIN_TITLE_FONT if min_font_size is None else min_font_size
+        # A tall narrow box is a bus bar, and its title cannot fit across it. Shrinking until it did produced a
+        # ~6pt label nobody can read (the AON crossbar on every generated chip). Turn the title on its side
+        # instead, which is what the printed diagrams do, and fit it along the bar.
+        if floor and height > width * TALL_RATIO and self.txt.width > max_w:
+            self.txt.rotate(PI / 2)
+        fit = min(max_w / self.txt.width if self.txt.width > 0 else 1.0,
+                  max_h / self.txt.height if self.txt.height > 0 else 1.0, 1.0)
+        # ...and never shrink past readable. A title that sticks out a little is a layout problem the linter can
+        # see and the author can fix; a title at 4pt just looks like dirt on the screen.
+        if floor and self.txt.font_size:
+            fit = max(fit, floor / self.txt.font_size)
+        if fit != 1.0:
+            self.txt.scale(fit)
             
         self.add(self.bg, self.txt)
         

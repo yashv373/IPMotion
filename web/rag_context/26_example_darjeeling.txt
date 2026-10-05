@@ -191,7 +191,7 @@ class DarjeelingIbexUartReadScene(Scene):
         self.add(b_life_cycle_controller)
         b_peri_tlul_crossbar = IPBlock('Peri\nTL-UL\nCross\nbar', theme, width=0.554, height=3.489, fill="#1E1736", stroke="#A78BFA", line_spacing=0.25)
         b_peri_tlul_crossbar.move_to([-0.702, 1.034, 0])
-        b_peri_tlul_crossbar.txt.font_size = 12.25
+        b_peri_tlul_crossbar.txt.font_size = 6.32
         b_peri_tlul_crossbar.txt.move_to([-0.702, 1.034, 0])
         self.add(b_peri_tlul_crossbar)
         b_gpio_32bit = IPBlock('32bit\nGPIO', theme, width=0.741, height=0.375, fill="#1E1736", stroke="#A78BFA", line_spacing=0.25)

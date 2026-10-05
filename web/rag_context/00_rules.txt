@@ -44,6 +44,19 @@ RULE 4 -- EVERY LABEL MUST BE READABLE AT A GLANCE.
 Edge labels ("Memory bus egress for Ibex and DMA", "Noise source bits") are the first thing a reader looks for
 and the first thing that ends up unreadable. Use font_size 16 or more for any free-standing label outside a
 block, and never below 14 anywhere. If a label does not fit, break it over two lines rather than shrinking it.
+A block's own title is handled for you: IPBlock never shrinks it below readable, and a tall narrow block (a bus
+bar) gets its title written vertically along the bar. So give a bus bar a real width (0.4 or more) and let the
+library do the rest -- do not pre-shrink the title yourself.
+
+RULE 5 -- BUILD EACH REGION FROM THE BLOCKS INSIDE IT, NEVER FROM HAND-PICKED COORDINATES.
+Place the blocks of a power or clock domain first, then wrap them:
+
+    main = domain_around("Main power and clock domain", [ibex, rom, sram, crossbar], "#0F172A")
+    self.add(main)                                 # add the region BEFORE the blocks
+
+domain_around() measures the blocks and sizes the box around them, so a block cannot end up hanging outside its
+own domain. Hand-written DomainGroup(x, y, w, h) numbers have left a block outside the box on every diagram
+generated so far. Only use DomainGroup directly when there is nothing inside the region to measure.
 
 RULES (follow exactly):
 1. Start with `from manim import *` then `from ipmotion_lib import *`.
