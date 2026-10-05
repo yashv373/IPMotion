@@ -54,6 +54,17 @@ The three pages are plain hand-edited HTML with duplicated header/footer. No bui
 - **No third-party scripts/CDN/analytics on the site.** Any injected script could read the stored API key.
 - OpenAI was dropped: CORS from a browser was never verified.
 
+## Replacing a video or image: bump the version marker
+Every `assets/video/*.mp4` in index.html carries `?v=N`. A replaced file keeps its name, so a browser that
+already has the old one keeps showing it -- which cost a whole round of "there is no improvement" when the live
+file was correct and the cached copy was two fixes old. **When you replace a media file, bump that N** (a single
+find-and-replace across index.html). Check the fix really shipped by downloading the live URL and pulling a
+frame out of it, not by reloading the page:
+
+    curl -s -o /tmp/v.mp4 https://yashv373.github.io/IPMotion/assets/video/<name>.mp4
+    ffprobe -v error -show_entries format=duration -of csv=p=0 /tmp/v.mp4
+    ffmpeg -y -ss 5 -i /tmp/v.mp4 -frames:v 1 /tmp/frame.png
+
 ## Not done / not verified
 - No real LLM call has been tested (needs a key): the generator form is the one unverified path.
 - Pages deploy IS confirmed live (2026-10-04): /, /changelog.html, /report.html, the gallery GIFs and
