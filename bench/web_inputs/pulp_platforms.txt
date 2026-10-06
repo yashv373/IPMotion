@@ -1,0 +1,46 @@
+The PULP platform family, drawn as four labelled groups stacked down the frame, with an IoT-to-HPC spectrum
+arrow across the middle.
+
+Group 1, across the top left, titled "RISC-V Cores and Vector Units":
+  RI5CY (CV32E, RV32)
+  Zero R (Ibex, RV32)
+  Snitch (RV32)
+  Spatz (RVV)
+  Ariane (CVA6, RV64)
+  ARA (RVV)
+
+Group 2, top middle, titled "Peripherals":
+  JTAG, SPI
+  UART, I2S
+  DMA, GPIO
+
+Group 3, top right, titled "Interconnects":
+  LIC, HCI
+  APB, FlooNoC
+  AXI4
+
+Group 4, a wide band under the first three, titled "Platforms". It holds three example systems side by side,
+each one a small cluster of tiles around a vertical interconnect bar:
+  left:   "Single core" - tiles I, O, M, R5, A around one interconnect bar.
+          Named systems: PULPino, PULPissimo, Cheshire
+  middle: "Multi-core" - tiles M, I, O, R5 around an interconnect bar, next to a "cluster" box holding
+          four M tiles over a horizontal interconnect bar over A, R5, R5, R5.
+          Named systems: OpenPULP, ControlPULP
+  right:  "Heterogeneous, Many-core" - the same arrangement as Multi-core, with the cluster box repeated
+          three times behind itself to show many of them.
+          Named systems: Hero, Carfield, Astral, Occamy, Mempool
+
+A wide left-to-right arrow runs under the Platforms band, labelled "IOT" at its left end and "HPC" at its
+right end. It is a spectrum: the three platform groups above it get bigger from left to right.
+
+Group 5, along the bottom, titled "Accelerators and ISA extensions":
+  XpulpNN, XpulpTNN
+  ITA (Transformers)
+  RBE, NEUREKA (QNNs)
+  FFT (DSP)
+  REDMULE (FP-Tensor)
+
+Wiring:
+  There are no wires between the groups. The only connecting shapes are the vertical interconnect bars inside
+  each platform, which touch the tiles on either side of them, and the horizontal interconnect bar inside each
+  cluster box.

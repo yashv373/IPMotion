@@ -17,6 +17,18 @@ Apache License 2.0. They are reproduced for study and comparison; we redraw them
 
 OpenTitan is licensed under Apache-2.0: https://github.com/lowRISC/opentitan/blob/master/LICENSE
 
+## Platform overview chart (`openPulp_arch/`)
+
+| File | Diagram | Source |
+|---|---|---|
+| `pulp_story.png` | The PULP platform family: cores, peripherals, interconnects, the single-core / multi-core / many-core platforms, and the accelerator band, along an IoT-to-HPC spectrum | PULP platform project, ETH Zurich and University of Bologna &mdash; https://pulp-platform.org |
+
+**Provenance to confirm with the author of this repo before this chart is published on the site.** It was in the
+repo when IPMotion v3 started and is used here only as a held-out benchmark input
+(`bench/web_inputs/pulp_platforms.txt`), which is never sent to a model as an example. It is a taxonomy chart,
+not a chip floorplan, which is exactly why it is useful: it is the first held-out exam that is not a block
+diagram.
+
 ## Structures animated from the literature (`gold_examples/`)
 
 | Example | Structure | Citation |

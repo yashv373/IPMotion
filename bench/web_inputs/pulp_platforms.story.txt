@@ -1,0 +1,14 @@
+Walk through the PULP family from the smallest IoT part to the largest HPC one, in six steps.
+
+Step 1: Show the four building-block groups at the top on their own - cores, peripherals, interconnects -
+so a newcomer sees what a platform is assembled from.
+Step 2: Highlight the Single core platform and name PULPino, PULPissimo and Cheshire. Point out that it is
+one R5 core, a little memory and one interconnect bar.
+Step 3: Move right to the Multi-core platform and name OpenPULP and ControlPULP. The new thing is the
+cluster box: four M tiles over their own interconnect, with an accelerator beside three more cores.
+Step 4: Move right again to the Heterogeneous, Many-core platform and name Hero, Carfield, Astral, Occamy
+and Mempool. The new thing is that the whole cluster is replicated.
+Step 5: Sweep along the IOT-to-HPC arrow underneath, left to right, to show that the three platforms are one
+spectrum rather than three unrelated designs.
+Step 6: Light up the Accelerators and ISA extensions band at the bottom and say that any of them can be
+dropped into any of the three platforms above.
