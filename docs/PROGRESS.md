@@ -804,3 +804,45 @@ chips (`systolic`, `arbiter_fsm`), and the only unused image in the repo, `openP
 platform taxonomy chart rather than an SoC floorplan -- a useful "new shape" exam, not a new SoC. Per
 `docs/SOURCES.md` we do not invent hardware, so a fourth chip needs a published block diagram added to the repo
 with its citation, and its truth file transcribed from that picture and approved. Waiting on the user to pick.
+
+## The re-baselined exam: a perfect fidelity score, and the bottleneck moves to spacing (2026-10-06)
+
+    python bench/run_web.py bench/web_inputs/peppermint.txt bench/web_inputs/peppermint.story.txt --reps 3
+
+**n=1 again.** The quota had not reset as far as a 3-rep run was concerned; rep 2 got a 429. One run, so treat
+the size of this as provisional -- but the shape of it is not ambiguous.
+
+| context | lint | blocks | wires | regions | extras |
+|---|---|---|---|---|---|
+| + library fit & pacing (n=1, old exam) | 22.0 | 31/33 | 19/32 | 2/3 | 6.0 |
+| + wire() router, RULES 1-4 (n=2, old exam) | 10.5 | 31/33 | 17.5/32 | 1/3 | 7.5 |
+| **re-baselined exam + RULE 5 + title/region guarantees (n=1)** | 15 | **33/33** | **32/32** | **3/3** | **1** |
+
+**Every structural number is at its ceiling.** Blocks 33/33, wires 32/32, regions 3/3, extras 1. The prediction
+written down beforehand was 26-29 wires; the result beat it. The buckets are now unscorable 2 (the two wires
+through the picture's unlabelled symbol, which can never match), arrowhead-only **0**, genuinely wrong **0**.
+
+**What the model actually did**, counted in its script: `wire(` 23 times, `heads="none"` **10** times -- exactly
+the 10 undirected links in the input -- and `domain_around(` **3** times, once per region. It used both new
+guarantees on the first run it ever saw them.
+
+**Honest attribution.** This run bundles the re-baselined input, the `-> / <-> / --` notation, RULE 5,
+`domain_around` and the title guarantees. It cannot say which did what. The arrowhead bucket going 8-9 -> 0 is
+clearly the notation; regions 1/3 -> 3/3 is clearly `domain_around` plus the outer-region line in the input. The
+clean alternative was five separate 3-rep runs, which is 15 requests out of 20 a day.
+
+**Lint got worse: 10.5 -> 15**, and that is now the whole problem. `text_overlap` 7, `min_spacing` 5,
+`text_occluded` 2, `out_of_frame` 1. Looking at the frame: the boxes themselves collide -- Ibex Core overlaps
+Interrupt Controller, Debug Module overlaps Life Cycle Controller -- and the bottom edge labels run into each
+other and off the frame. **The picture is now correct and crowded, where before it was wrong and tidy.**
+
+**One of those was a library fault and is fixed.** A title that refuses to shrink now hangs over its neighbours
+instead ("Mailboxes (inbound & outbo" lying across the next block). `IPBlock` now **breaks a long title over up
+to three lines before shrinking anything**, trying 1/2/3 lines and keeping whichever needs the least shrinking --
+the same method `DomainGroup._fit_title` already used for a region title. Shown with no model call in
+`docs/title_wrap_after.png`: the same script, Mailboxes now on two lines inside its box.
+
+**The next bottleneck, stated plainly: block spacing.** Overlapping boxes are the model's own coordinates, so
+this is the next thing to attack, and the choice is the usual one -- a rule ("leave 0.3 between boxes, count the
+width before placing a row") or a library guarantee (a `row()`/`grid()` helper that spaces a list of blocks for
+you, the way `domain_around` sizes a region). The library has won every time so far. Suite is 222 green.

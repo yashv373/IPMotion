@@ -53,3 +53,16 @@ def test_domain_around_leaves_the_padding_it_was_asked_for():
     d = domain_around("R", [b], "#0F172A", pad=0.5)
     assert np.isclose(d.bg.width, 2.0, atol=0.01)
     assert np.isclose(d.bg.height, 2.0, atol=0.01)
+
+
+def test_a_long_title_is_wrapped_before_it_is_shrunk():
+    # manim's Text.text drops the whitespace, so the wrap is checked by what it buys: the title sits inside the
+    # box AND keeps a readable size, which a single line of this length in 1.8 units cannot do.
+    wide = IPBlock("Mailboxes (inbound & outbound)", TH, width=1.8, height=0.7)
+    assert wide.txt.width <= 1.6 + 1e-6, "the title must sit inside the box"
+    assert wide.txt.font_size > 12, "and must not have been shrunk to get there"
+
+
+def test_a_one_word_title_too_wide_is_still_handled():
+    b = IPBlock("Supercalifragilistic", TH, width=0.9, height=0.6)
+    assert b.txt.font_size >= MIN_TITLE_FONT - 1e-6     # nothing to wrap on, so the floor is what protects it

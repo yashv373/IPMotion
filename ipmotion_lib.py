@@ -258,6 +258,23 @@ MIN_TITLE_FONT = 8.0     # font_size floor for a block title: ~9.6px cap height 
 TALL_RATIO = 1.3         # a box this much taller than it is wide is a bar, and its title is written along it
 
 
+def _wrap_to_box(title, kw, room_w, room_h):
+    """The version of `title` that fits room_w x room_h at the largest size: try it on one, two and three lines
+    and keep whichever needs the least shrinking. Same idea as DomainGroup._fit_title, for a block's own title."""
+    words = title.split()
+    best = None
+    for n in (1, 2, 3):
+        if n > len(words):
+            break
+        per = -(-len(words) // n)                      # words per line, ceiling
+        lines = [" ".join(words[i:i + per]) for i in range(0, len(words), per)]
+        cand = Text("\n".join(lines), **kw)
+        scale = min(room_w / max(cand.width, 1e-9), room_h / max(cand.height, 1e-9), 1.0)
+        if best is None or scale > best[0] + 1e-6:
+            best = (scale, cand)
+    return best[1]
+
+
 class IPBlock(PortMixin, VGroup):
     """Block with a title. ports=[{"label": "ARVALID", "edge": "RIGHT", "name": optional}] declares real,
     connectable ports (block.port("ARVALID")); _left/_right/_top/_bottom always exist as implicit ports."""
@@ -288,6 +305,12 @@ class IPBlock(PortMixin, VGroup):
         # instead, which is what the printed diagrams do, and fit it along the bar.
         if floor and height > width * TALL_RATIO and self.txt.width > max_w:
             self.txt.rotate(PI / 2)
+        # A wide title in a wide-ish box is broken over lines before anything is shrunk. Now that the title
+        # refuses to go below readable, an unwrapped one simply hangs out over its neighbours instead
+        # ("Mailboxes (inbound & outbo" lying across the block next to it).
+        elif floor and "\n" not in title and self.txt.width > max_w and len(title.split()) > 1:
+            self.txt = _wrap_to_box(title, dict(font=font, font_size=16, color=tc, weight=BOLD,
+                                                line_spacing=line_spacing), max_w, max_h).move_to(self.bg)
         fit = min(max_w / self.txt.width if self.txt.width > 0 else 1.0,
                   max_h / self.txt.height if self.txt.height > 0 else 1.0, 1.0)
         # ...and never shrink past readable. A title that sticks out a little is a layout problem the linter can
