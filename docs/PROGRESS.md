@@ -796,8 +796,11 @@ first in line when `OPENROUTER_API_KEY` is set, and `bench/common.MODEL` reads `
       python bench/run_web.py bench/web_inputs/peppermint.txt bench/web_inputs/peppermint.story.txt --reps 3
 
 It is the same endpoint `web/app.js` calls, so a bench run through it measures what an OpenRouter visitor
-actually gets, and it is the end-to-end test the new provider has not had. **Never mix providers inside one
-comparison table** -- a row is one model.
+actually gets, and it is the end-to-end test the new provider has not had. **The model name picks the
+provider**: a slug with a `/` goes to OpenRouter, anything else to Gemini. Keying off the key alone meant
+that once it was in `.env`, a run asked for `gemini-3.5-flash` would silently go to OpenRouter and still be
+labelled `gemini-3.5-flash` in `final.json`. **Never mix providers inside one comparison table** -- a row is
+one model.
 
 **New SoCs are blocked on a source, not on code.** `bench/web_inputs/` holds two held-out exams that are not
 chips (`systolic`, `arbiter_fsm`), and the only unused image in the repo, `openPulp_arch/pulp_story.png`, is a
@@ -846,3 +849,32 @@ the same method `DomainGroup._fit_title` already used for a region title. Shown 
 this is the next thing to attack, and the choice is the usual one -- a rule ("leave 0.3 between boxes, count the
 width before placing a row") or a library guarantee (a `row()`/`grid()` helper that spaces a list of blocks for
 you, the way `domain_around` sizes a region). The library has won every time so far. Suite is 222 green.
+
+## A held-out leak, found by looking for it (2026-10-06)
+
+Three Peppermint-only strings had drifted into `00_rules.txt` as throwaway examples, and one into the Earlgrey
+and Darjeeling example headers: `"Main power and clock domain"` (added by RULE 5 today), `"Memory bus egress for
+Ibex and DMA"` and `"Noise source bits"` (RULE 4, yesterday), and `"Mailboxes (inbound & outbound)"` (in the
+"do not shorten" example, oldest of the four). Peppermint is the exam. Those strings are now neutral inventions
+(`"Compute domain"`, `"External memory port for the CPU"`, `"Entropy input"`, `"Timer Block (32-bit)"`).
+
+**The existing leak guard did not catch it** -- it checks indexer chunks and denied paths, not the live prompt
+files. `test_leakguard.py` now has a test that takes every label Peppermint has and Earlgrey and Darjeeling do
+not, and fails if any of them appears in `web/rag_context/*.txt`.
+
+**Does it invalidate the 33/32/3?** Probably not: the exam input contains those labels anyway, so the model did
+not need the prompt to know them, and the leaked strings were region and edge-label names rather than the block
+names being scored. But it cannot be proven either way from this run, which is reason enough to confirm at n=3
+on the cleaned prompt.
+
+**Other things tightened in the same pass:**
+- `test_gemini.py` at the repo root was collected by pytest and called `genai.list_models()` on import, so every
+  `pytest -q` made a live API call. Renamed to `list_gemini_models.py`. (It is a different quota metric from
+  `generate_content`, so it is probably not what drained the day's 20 requests -- but a test run should not call
+  anyone's API.)
+- RULE 4 now tells the model never to pass `min_font_size`, which appears in the generated API signature and
+  would turn the title guarantees off.
+- `bench/web_inputs/pulp_platforms.*` said "four groups" and then listed five, and its story said "four" and
+  named three. An exam that contradicts itself measures confusion, not the generator.
+- The site's "what the generator makes today" clip is now today's run, with a caption written from its frame:
+  perfect structure, colliding boxes, bottom edge labels running off the frame.

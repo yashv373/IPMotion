@@ -55,43 +55,48 @@ is the exam. A test enforces this.
 `axi_read_handshake`, `systolic_array_mac`, `mesi_cache_fsm`, `lockstep_safety_island`, `cim_crossbar_array`.
 The last four are **deliberately not in the live prompt yet** — they are unmeasured.
 
-## 4b. The one open question, ANSWERED (2026-10-05, evening)
-**Does the model call `wire()`? Yes.** 23 `wire(` calls per script, 8 `Arrow(` left (the edge labels RULE 3
-allows). Lint errors halved, 22 -> 10.5. See the last section of `docs/PROGRESS.md` for the numbers.
+## 4b. Where wiring ended up (2026-10-06)
+**Answered, at n=1.** On the re-baselined exam the generator scored **blocks 33/33, wires 32/32, regions 3/3,
+extras 1** -- every structural number at its ceiling. The prediction written down beforehand was 26-29 wires.
+In its own script: `wire(` 23 times, `heads="none"` exactly 10 times (the 10 undirected links), `domain_around(`
+3 times. It used both new library guarantees on the first run it ever saw them.
 
-**The new finding: "wires 17.5/32" was mostly the exam, not the generator.** `bench/wire_buckets.py` splits the
-rejected connections: 7 unscorable (an end-block label was not in the input verbatim), 8-9 arrowhead-only (the
-right pair IS joined, only the heads differ), and 0 and 2 genuinely wrong. The exam input has been re-baselined and the `-> / <-> / --`
-notation is now taught to every user. **That re-baseline is unmeasured**: the Gemini free tier (20/day) ran out.
+**n=1 because the quota ran out on rep 2.** The number is provisional in size, not in shape.
 
-**THE FIRST COMMAND NEXT SESSION** (quota resets ~05:00 local):
+**The bottleneck is now spacing, not correctness.** Lint went 10.5 -> 15 on that run: the picture is correct and
+crowded where it used to be wrong and tidy. Boxes collide (Ibex Core with Interrupt Controller, Debug Module with
+Life Cycle Controller) and the bottom edge labels run into each other and off the frame. One cause was the
+library's own and is fixed -- a title that refuses to shrink used to hang over its neighbour, so `IPBlock` now
+breaks a long title over up to three lines first. Re-linting the SAME script against the fixed library gives
+**15 -> 12 errors**, measured, no model call. The rest is the model's own coordinates.
+
+**THE FIRST COMMAND NEXT SESSION** (confirm at n=3 before building anything on this):
 
     python bench/run_web.py bench/web_inputs/peppermint.txt bench/web_inputs/peppermint.story.txt --reps 3
     python bench/wire_buckets.py
 
-**Predicted**: unscorable 7 -> ~2, arrowhead-only -> ~0, wires 17.5 -> 26-29 of 32. Numbers below that mean the
-remaining gap is real. Numbers at it mean wiring is done, and the next bug is the one named below.
-
-**The next quality bugs, seen in both last frames, not started.** Three, all library guarantees:
-1. the AON TL-UL Crossbar label is drawn at ~6pt and unreadable in both reps (`min_text_size`). A label must
-   never shrink below readable -- rotate it in a narrow tall box, or widen the box;
-2. one block escapes its region per rep, a different one each time (AON crossbar, then `ibex_core`);
-3. the outer region was never drawn, because the exam input never named it. Fixed at the input this session.
-Faults 2 and 3 are the regions drop, 2/3 -> 1/3. Fault 1 is separate; fixing text size will not move regions.
-
 ## 5. What to do next, in order
-1. **Measure the re-baselined exam** (3 reps, 3 of the day's 20 calls) and run `bench/wire_buckets.py`. This is
-   the number that says whether wiring is finished. Prediction is written in 4b; compare against it honestly.
-2. **The unreadable AON crossbar label** (4b). A library guarantee: a label never shrinks below readable. Expect
-   it to move regions 1/3 -> 2/3 and remove the `min_text_size` lint error.
-3. **Measure a new shape going in.** Held-out exams are ready: `bench/web_inputs/systolic.*` and
-   `bench/web_inputs/arbiter_fsm.*`. Score them with `--no-spec` (geometry only; there is no reference answer
-   for a shape we invented the exam for).
-4. **Retrieval.** With five gold examples, sending all of them is not viable — the prompt was already 85k
-   characters with two. Pick the 1-2 that match the user's input. This is the user's own idea and it stops being
-   optional at example three.
-5. **Done this session:** the re-baseline of `bench/web_inputs/peppermint.txt`. It breaks comparability with
-   every row above, so the next measurement starts a new baseline block in the table.
+1. **Confirm at n=3** (above). The 33/32/3 result bundles the re-baselined input, the `-> / <-> / --` notation,
+   RULE 5, `domain_around` and the title guarantees, so it attributes nothing. Confirm the size before adding to
+   it.
+2. **Block spacing.** The one number still bad. Same choice as every time: a rule ("leave 0.3 between boxes") or
+   a library guarantee (a `row()`/`grid()` helper that spaces a list of blocks, the way `domain_around` sizes a
+   region). The library has won every time so far. **Keep its rule out of the prompt until step 1 has run**, or
+   the n=3 number is confounded too.
+3. **New shapes, `--no-spec` (geometry only, no reference answer):**
+   `bench/web_inputs/pulp_platforms.*` (a 5-group taxonomy chart with no wires between groups -- the first
+   held-out exam that is not a block diagram), then `systolic.*` and `arbiter_fsm.*`.
+4. **Retrieval.** With five gold examples, sending all of them is not viable. Pick the 1-2 that match the user's
+   input. Stops being optional at example three.
+5. **Done this session:** the re-baseline of `bench/web_inputs/peppermint.txt`, so the next measurement starts a
+   new baseline block in the table.
+
+## Waiting on the user (asked 2026-10-06, not answered)
+- **Which SoC** to add as a fourth chip. They chose "I name the chip, you find it" but did not name one. Nothing
+  can be built without it: `docs/SOURCES.md` forbids inventing hardware.
+- **An OpenRouter key**, for the "measure on OpenRouter tonight, repeat on Gemini after the reset" plan they
+  picked. The bench supports it: a model name with a `/` goes to OpenRouter, anything else to Gemini.
+- **Where `openPulp_arch/pulp_story.png` came from**, before that chart appears anywhere public.
 
 ## 6. How to work
 - **Measure before you build.** State the number you expect to move before starting.

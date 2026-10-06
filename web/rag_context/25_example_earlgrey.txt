@@ -3,7 +3,7 @@
 #   1. REGIONS FIRST. Every power/clock domain in the picture is a DomainGroup, added before the blocks so the
 #      blocks sit on top of it. A diagram with domains and no DomainGroup is wrong.
 #   2. EXACT NAMES. Every block title is the picture's own text, character for character. Never shorten
-#      "Mailboxes (inbound & outbound)" to "Mailboxes", and never invent a word the picture does not have.
+#      "Timer Block (32-bit)" to "Timer", and never invent a word the picture does not have.
 #   3. ABSOLUTE POSITIONS. Blocks are placed with move_to([x, y, 0]) at measured coordinates, not arrange() or
 #      next_to(). That is the only way a 40-block picture comes out without overlaps.
 #   4. EVERY WIRE. One Line per connection in the source diagram, with explicit points. If the picture has 53

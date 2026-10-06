@@ -43,3 +43,22 @@ def test_indexer_input_chunks_are_clean():
     chunks = indexer.chunk_library(indexer.LIB_PATH) + indexer.chunk_example_scripts() + indexer.chunk_manim_api_basics()
     assert_no_truth_leak(chunks, where="indexer chunks")
     assert not any(indexer.is_denied(c["metadata"].get("source", "")) for c in chunks)
+
+
+def test_no_peppermint_only_label_reaches_the_live_prompt():
+    """Peppermint is the exam (bench/run_web.py). Darjeeling and Earlgrey may appear in web/rag_context as
+    worked examples -- the user allowed that on 2026-10-04 -- but anything only Peppermint says must not, or the
+    score stops meaning anything. Three such strings had drifted into 00_rules.txt as throwaway examples."""
+    import glob
+    import yaml
+
+    def labels(name):
+        d = yaml.safe_load(open(os.path.join(ROOT, "bench", "truth", name), encoding="utf-8"))
+        return {i["label"] for k in ("regions", "blocks", "externals") for i in (d.get(k) or []) if i.get("label")}
+
+    held_out = labels("opentitan_peppermint.yaml") - labels("opentitan_earlgrey.yaml") - labels("opentitan_darjeeling.yaml")
+    leaks = []
+    for path in glob.glob(os.path.join(ROOT, "web", "rag_context", "*.txt")):
+        text = open(path, encoding="utf-8").read()
+        leaks += [(os.path.basename(path), l) for l in held_out if l in text]
+    assert not leaks, f"held-out Peppermint labels in the live prompt: {leaks}"

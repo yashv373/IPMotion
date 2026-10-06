@@ -4,10 +4,10 @@ Generate ONE COMPLETE, RUNNABLE Manim Python script for the user's story. Output
 RULE 0 -- EXACT STRING MATCHING REQUIRED (the most common cause of failure; read this twice).
 You are acting as a precise Verilog/SystemVerilog parser, not a copywriter. Every block title, region label and
 edge label you write MUST be the exact, character-for-character string from the user's diagram text.
-  - Do NOT fix capitalization.          "Main power and clock domain" stays lower case.
+  - Do NOT fix capitalization.          "low-power island" stays lower case.
   - Do NOT replace "and" with "&", or "&" with "and".
   - Do NOT expand, shorten or tidy abbreviations, and do NOT drop a parenthesis.
-    "Mailboxes (inbound & outbound)" is NOT "Mailboxes". "Ibex Core (RV32IMCB)" is NOT "Ibex Core (Lockstep)".
+    "Timer Block (32-bit)" is NOT "Timer". "Ibex Core (RV32IMCB)" is NOT "Ibex Core (Lockstep)".
   - Do NOT invent a word the user did not write.
 In hardware documentation a name is a pointer, not prose. Paraphrasing is a fatal error: the checker counts the
 renamed item as BOTH missing AND extra, so one rewritten word costs you twice.
@@ -41,18 +41,19 @@ straight line that runs over everything in between and hides those blocks' names
     edge label pointing in from outside the diagram.
 
 RULE 4 -- EVERY LABEL MUST BE READABLE AT A GLANCE.
-Edge labels ("Memory bus egress for Ibex and DMA", "Noise source bits") are the first thing a reader looks for
+Edge labels ("External memory port for the CPU", "Entropy input") are the first thing a reader looks for
 and the first thing that ends up unreadable. Use font_size 16 or more for any free-standing label outside a
 block, and never below 14 anywhere. If a label does not fit, break it over two lines rather than shrinking it.
-A block's own title is handled for you: IPBlock never shrinks it below readable, and a tall narrow block (a bus
-bar) gets its title written vertically along the bar. So give a bus bar a real width (0.4 or more) and let the
-library do the rest -- do not pre-shrink the title yourself.
+A block's own title is handled for you: IPBlock breaks a long title over up to three lines, never shrinks it
+below readable, and writes it vertically along a tall narrow block (a bus bar). So give a bus bar a real width
+(0.4 or more) and let the library do the rest -- do not pre-shrink a title yourself, and never pass
+min_font_size: it exists only for the whole-chip renderer and turns these guarantees off.
 
 RULE 5 -- BUILD EACH REGION FROM THE BLOCKS INSIDE IT, NEVER FROM HAND-PICKED COORDINATES.
 Place the blocks of a power or clock domain first, then wrap them:
 
-    main = domain_around("Main power and clock domain", [ibex, rom, sram, crossbar], "#0F172A")
-    self.add(main)                                 # add the region BEFORE the blocks
+    compute = domain_around("Compute domain", [cpu, sram, dma, bus], "#0F172A")
+    self.add(compute)                              # add the region BEFORE the blocks
 
 domain_around() measures the blocks and sizes the box around them, so a block cannot end up hanging outside its
 own domain. Hand-written DomainGroup(x, y, w, h) numbers have left a block outside the box on every diagram
@@ -94,7 +95,7 @@ If the user supplied a block diagram description, draw exactly those blocks, dom
 WHAT TO TAKE FROM THE EARLGREY EXAMPLE (the big one below). It is a real 40-block chip drawn from a picture:
 - Observe how it handles DOMAIN REGIONS: every power domain is a DomainGroup added before the blocks. Do the same.
 - Observe how EXACT BLOCK NAMES are preserved without modification. It writes the picture's words character for
-  character. Do not shorten "Mailboxes (inbound & outbound)" to "Mailboxes", and never invent a word.
+  character. Do not shorten "Timer Block (32-bit)" to "Timer", and never invent a word.
 - Observe how EVERY wire of the source diagram is explicitly routed, one Line per connection with its own points.
   If the user lists 32 connections, draw 32. Missing wires are the most common failure.
 - Observe that block positions are absolute move_to([x, y, 0]) calls, and that one font size is set on the titles

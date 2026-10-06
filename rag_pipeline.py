@@ -97,10 +97,13 @@ def call_llm(prompt, api_key=None, model="gemini-3.5-flash"):
     # OpenRouter first when its key is set, because setting it is a deliberate choice. Same endpoint the website
     # uses, so a bench run with it measures exactly what an OpenRouter visitor gets -- and the Gemini free tier
     # is 20 requests a day, which a 3-rep run eats in one go.
+    # The MODEL NAME picks the provider, not the presence of a key: an OpenRouter slug always has a "/" in it.
+    # Keying off OPENROUTER_API_KEY alone meant that once the key was in .env, a run asked for gemini-3.5-flash
+    # went to OpenRouter and was still labelled "gemini-3.5-flash" in final.json -- a mixed comparison table.
     or_key = os.environ.get("OPENROUTER_API_KEY")
-    if or_key:
+    if or_key and "/" in model:
         import requests
-        slug = model if "/" in model else os.environ.get("OPENROUTER_MODEL", "deepseek/deepseek-chat-v3.1")
+        slug = model
         r = requests.post("https://openrouter.ai/api/v1/chat/completions",
                           headers={"Authorization": f"Bearer {or_key}", "Content-Type": "application/json"},
                           json={"model": slug, "messages": [{"role": "user", "content": prompt}],

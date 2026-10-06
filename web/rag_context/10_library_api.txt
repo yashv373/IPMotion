@@ -24,7 +24,7 @@ class GlowBox(VGroup)
     def set_color(self, color)
 class IPBlock(PortMixin, VGroup)
     # Block with a title. ports=[{"label": "ARVALID", "edge": "RIGHT", "name": optional}] declares real,
-    def __init__(self, title, theme, width=2.5, height=1.5, fill=None, stroke=None, text_color=None, dotted=False, ind=False, font='Consolas', ports=None, line_spacing=0.6)
+    def __init__(self, title, theme, width=2.5, height=1.5, fill=None, stroke=None, text_color=None, dotted=False, ind=False, font='Consolas', ports=None, line_spacing=0.6, min_font_size=None)
 class Wire(VGroup)
     def __init__(self, start_obj=None, end_obj=None, start_edge=DOWN, end_edge=UP, manhattan=False, color='#6B7280', waypoints=None)
 class Packet(VGroup)
